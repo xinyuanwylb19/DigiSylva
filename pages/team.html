@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team - DigiSylva</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .team-page { max-width: 1000px; margin: 0 auto; }
+    .team-block { margin-bottom: 2.5rem; }
+    .team-block-title {
+      color: var(--green-dark);
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--green-pale);
+    }
+    .people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem 2rem; }
+    .person {
+      display: flex; align-items: center; gap: 1rem;
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 1rem 1.25rem; box-shadow: var(--shadow-sm);
+    }
+    .avatar-circle {
+      width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 1.05rem;
+    }
+    .person .p-name { font-weight: 700; color: var(--text-dark); font-size: 1.02rem; }
+    .person .p-aff { font-size: 0.85rem; color: var(--text-light); margin-top: 0.1rem; }
+    .person .p-email { font-size: 0.85rem; margin-top: 0.15rem; }
+    .person .p-email a { color: var(--green-mid); }
+    .fund-card {
+      background: #fffdf3; border: 1px solid #efe3ad; border-left: 4px solid var(--gold);
+      border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1rem;
+    }
+    .fund-card .f-agency { font-weight: 700; color: var(--green-dark); margin-bottom: 0.5rem; }
+    .fund-card .f-title { font-style: italic; color: #8a742f; font-size: 0.9rem; line-height: 1.55; margin-bottom: 0.4rem; }
+    .fund-card .f-title:last-child { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="../index.html">
+    <img src="../assets/DigiSylva_mark.png" alt="" class="brand-mark" />
+    <span class="digisylva-logo"><span class="d-digi">Digi</span><span class="d-s">S</span><span class="d-y">y</span><span class="d-l">l</span><span class="d-v">v</span><span class="d-a">a</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="naip.html">Forest Explorer</a></li>
+    <li><a href="forest-inventory.html">Forest Inventory</a></li>
+    <li><a href="map.html">Forest Map</a></li>
+    <li><a href="prediction.html">Forest Prediction</a></li>
+    <li><a href="forest-health.html">Forest Health</a></li>
+    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="ai-advisor.html">AI Advisor</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li><a href="workshops.html">Workshops</a></li>
+    <li><a href="news.html">News</a></li>
+    <li><a href="team.html" class="active">Team</a></li>
+  </ul>
+  <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">🔍 Search</button>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <h1>Our Team</h1>
+      <p>Investigators and funding</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="team-page">
+
+      <div class="team-block">
+        <div class="team-block-title">Principal Investigator</div>
+        <div class="people-grid">
+          <div class="person">
+            <div class="avatar-circle" style="background:#2d6a4f;">XW</div>
+            <div>
+              <div class="p-name">Xinyuan Wei</div>
+              <div class="p-aff">University of Maine</div>
+              <div class="p-email"><a href="mailto:xinyuan.wei@maine.edu">xinyuan.wei@maine.edu</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-block">
+        <div class="team-block-title">Co-Investigators</div>
+        <div class="people-grid">
+          <div class="person">
+            <div class="avatar-circle" style="background:#2563eb;">DH</div>
+            <div><div class="p-name">Daniel Hayes</div><div class="p-aff">University of Maine</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#7c3aed;">AW</div>
+            <div><div class="p-name">Aaron Weiskittel</div><div class="p-aff">University of Maine</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#d97706;">JZ</div>
+            <div><div class="p-name">Jianheng Zhao</div><div class="p-aff">University of Maine</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#0d9488;">KS</div>
+            <div><div class="p-name">Kathleen Savage</div><div class="p-aff">Woodwell Climate</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#4f46e5;">AD</div>
+            <div><div class="p-name">Adam Daigneault</div><div class="p-aff">University of Maine</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#db2777;">PR</div>
+            <div><div class="p-name">Parinaz Rahimzadeh</div><div class="p-aff">University of Maine</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-block">
+        <div class="team-block-title">Collaborators</div>
+        <div class="people-grid">
+          <div class="person">
+            <div class="avatar-circle" style="background:#2e7d32;">CW</div>
+            <div><div class="p-name">Chris Woodall</div><div class="p-aff">CTrees</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#1565c0;">BP</div>
+            <div><div class="p-name">Benjamin Poulter</div><div class="p-aff">Spark Climate Solutions</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#8e24aa;">LM</div>
+            <div><div class="p-name">Lei Ma</div><div class="p-aff">University of Maryland</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-block">
+        <div class="team-block-title">Students</div>
+        <div class="people-grid">
+          <div class="person">
+            <div class="avatar-circle" style="background:#0e7490;">SK</div>
+            <div><div class="p-name">Shambhu Katel</div><div class="p-aff">MS · University of Maine</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#4338ca;">GD</div>
+            <div><div class="p-name">Grant Daniels</div><div class="p-aff">MS · University of Maine</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#ea580c;">AO</div>
+            <div><div class="p-name">Archibald Owen</div><div class="p-aff">MF · University of Maine</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#15803d;">CZ</div>
+            <div><div class="p-name">Chenye Zhang</div><div class="p-aff">Ph.D · University of Maine</div></div>
+          </div>
+          <div class="person">
+            <div class="avatar-circle" style="background:#0891b2;">YS</div>
+            <div><div class="p-name">Yury Shafirin</div><div class="p-aff">MS · University of Maine</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-block">
+        <div class="team-block-title">Funding</div>
+        <div class="fund-card">
+          <div class="f-agency">Maine Space Grant Consortium</div>
+          <div class="f-title">SylvaScan: An AI-Driven Platform for Digitizing, Mapping, and Monitoring Maine Forest Dynamics Using Airborne Laser Scanning</div>
+        </div>
+        <div class="fund-card">
+          <div class="f-agency">USDA - Northeastern States Research Cooperative</div>
+          <div class="f-title">Next-generation wood products carbon estimator: a tool for comprehensive stakeholder collaboration and decision-making</div>
+        </div>
+        <div class="fund-card">
+          <div class="f-agency">NASA - Carbon Monitoring System</div>
+          <div class="f-title">Supporting Stakeholder Data Requirements for Decision-Making in Managed Forests: A Landscape Model-Data Framework for High Resolution Carbon Accounting and Uncertainty Estimation</div>
+          <div class="f-title">Phase 2 prototype development of a scalable MRV framework that integrates inventory data, remote sensing, and landscape modeling to support stakeholder decision-making for carbon in managed forests</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- page-wrapper -->
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>© 2026 DigiSylva. Released on 12/03/2025. Updated on 07/04/2026.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../js/search.js"></script>
+</body>
+</html>

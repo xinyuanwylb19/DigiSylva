@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workshops - DigiSylva</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .ws-wrap { max-width: 900px; margin: 0 auto; }
+    .ws-item {
+      display: flex; gap: 1.25rem; align-items: flex-start;
+      background: white; border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 1.5rem 1.75rem; box-shadow: var(--shadow-sm); margin-bottom: 1.25rem;
+    }
+    .ws-date {
+      flex-shrink: 0; width: 84px; text-align: center;
+      background: var(--green-pale); border-radius: var(--radius-sm); padding: 0.6rem 0.4rem;
+    }
+    .ws-date .m { font-size: 0.8rem; font-weight: 700; color: var(--green-mid); text-transform: none; letter-spacing: 0.03em; }
+    .ws-date .y { font-size: 1.3rem; font-weight: 700; color: var(--green-dark); font-family: 'Playfair Display', serif; }
+    .ws-body h3 { color: var(--green-dark); font-family: 'Inter', sans-serif; font-size: 1.1rem; margin: 0 0 0.35rem; }
+    .ws-loc { font-size: 0.88rem; color: var(--text-mid); }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="../index.html">
+    <img src="../assets/DigiSylva_mark.png" alt="" class="brand-mark" />
+    <span class="digisylva-logo"><span class="d-digi">Digi</span><span class="d-s">S</span><span class="d-y">y</span><span class="d-l">l</span><span class="d-v">v</span><span class="d-a">a</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="naip.html">Forest Explorer</a></li>
+    <li><a href="forest-inventory.html">Forest Inventory</a></li>
+    <li><a href="map.html">Forest Map</a></li>
+    <li><a href="prediction.html">Forest Prediction</a></li>
+    <li><a href="forest-health.html">Forest Health</a></li>
+    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="ai-advisor.html">AI Advisor</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li><a href="workshops.html" class="active">Workshops</a></li>
+    <li><a href="news.html">News</a></li>
+    <li><a href="team.html">Team</a></li>
+  </ul>
+  <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">🔍 Search</button>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <h1>Workshops</h1>
+      <p>Workshops and events from the DigiSylva team</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="ws-wrap">
+
+      <div class="ws-item">
+        <div class="ws-date">
+          <div class="m">May</div>
+          <div class="y">2026</div>
+        </div>
+        <div class="ws-body">
+          <h3>Forest Carbon Workshop</h3>
+          <div class="ws-loc">📍 Orono, Maine</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- page-wrapper -->
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>© 2026 DigiSylva. Released on 12/03/2025. Updated on 07/04/2026.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../js/search.js"></script>
+</body>
+</html>

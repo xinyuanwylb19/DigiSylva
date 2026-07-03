@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forest Tools - DigiSylva</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
+    .tool-card {
+      background: white; border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 1.75rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.75rem;
+      transition: all var(--transition);
+    }
+    .tool-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .tool-card .t-icon {
+      width: 56px; height: 56px; background: var(--green-pale); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 2rem;
+    }
+    .tool-card h3 { color: var(--green-dark); font-family: 'Inter', sans-serif; font-size: 1.15rem; margin: 0; }
+    .tool-card .t-meta { font-size: 0.78rem; color: var(--green-mid); font-weight: 600; }
+    .tool-card p { font-size: 0.9rem; color: var(--text-mid); line-height: 1.65; margin: 0; }
+    .tool-links { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="../index.html">
+    <img src="../assets/DigiSylva_mark.png" alt="" class="brand-mark" />
+    <span class="digisylva-logo"><span class="d-digi">Digi</span><span class="d-s">S</span><span class="d-y">y</span><span class="d-l">l</span><span class="d-v">v</span><span class="d-a">a</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="naip.html">Forest Explorer</a></li>
+    <li><a href="forest-inventory.html">Forest Inventory</a></li>
+    <li><a href="map.html">Forest Map</a></li>
+    <li><a href="prediction.html">Forest Prediction</a></li>
+    <li><a href="forest-health.html">Forest Health</a></li>
+    <li><a href="forest-tools.html" class="active">Forest Tools</a></li>
+    <li><a href="ai-advisor.html">AI Advisor</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li><a href="workshops.html">Workshops</a></li>
+    <li><a href="news.html">News</a></li>
+    <li><a href="team.html">Team</a></li>
+  </ul>
+  <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">🔍 Search</button>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <h1>Forest Tools</h1>
+      <p>Open tools and software</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="tool-grid">
+
+      <!-- Wood Products Carbon Tracker -->
+      <div class="tool-card">
+        <div class="t-icon">🪵</div>
+        <h3>Wood Products Carbon Tracker</h3>
+        <div class="t-meta">Interactive web tool</div>
+        <p>Estimate and track carbon stored in harvested wood products over time, supporting stakeholder collaboration and forest-products decision-making.</p>
+        <div class="tool-links">
+          <a class="btn btn-primary btn-sm" href="https://wpsctracker.org/" target="_blank" rel="noopener">🔗 Open tool</a>
+        </div>
+      </div>
+
+      <!-- PyFIA -->
+      <div class="tool-card">
+        <div class="t-icon">🐍</div>
+        <h3>PyFIA</h3>
+        <div class="t-meta">Open-source Python package</div>
+        <p>Analyze and visualize the U.S. Forest Inventory and Analysis (FIA) database, lowering the barrier to forest science for researchers and practitioners. Published in <em>Carbon Balance and Management</em> (2025).</p>
+        <div class="tool-links">
+          <a class="btn btn-primary btn-sm" href="https://github.com/xinyuanwylb19/PyFIA" target="_blank" rel="noopener">🔗 GitHub / tool</a>
+          <a class="btn btn-dark btn-sm" href="https://link.springer.com/article/10.1186/s13021-025-00364-7" target="_blank" rel="noopener">📄 Read the paper</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- page-wrapper -->
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>© 2026 DigiSylva. Released on 12/03/2025. Updated on 07/04/2026.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../js/search.js"></script>
+</body>
+</html>

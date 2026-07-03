@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Advisor - DigiSylva</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .advisor-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .topic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem; }
+    .topic-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 0.82rem;
+      color: var(--text-mid);
+      line-height: 1.4;
+    }
+    .topic-card:hover { border-color: var(--green-bright); background: var(--green-pale); color: var(--green-dark); }
+    .topic-card .t-icon { font-size: 1.25rem; margin-bottom: 0.3rem; }
+    .topic-card .t-title { font-weight: 600; color: var(--green-dark); font-size: 0.85rem; }
+    @media (max-width: 900px) { .advisor-layout { grid-template-columns: 1fr; } }
+    .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 0.5rem; }
+    .typing-dot { width: 8px; height: 8px; background: var(--green-bright); border-radius: 50%; animation: typingBounce 1.4s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+    .msg-bubble a { color: var(--green-bright); text-decoration: underline; }
+    .source-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: var(--green-pale);
+      color: var(--green-mid);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      margin-top: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="../index.html">
+    <img src="../assets/DigiSylva_mark.png" alt="" class="brand-mark" />
+    <span class="digisylva-logo"><span class="d-digi">Digi</span><span class="d-s">S</span><span class="d-y">y</span><span class="d-l">l</span><span class="d-v">v</span><span class="d-a">a</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="naip.html">Forest Explorer</a></li>
+    <li><a href="forest-inventory.html">Forest Inventory</a></li>
+    <li><a href="map.html">Forest Map</a></li>
+    <li><a href="prediction.html">Forest Prediction</a></li>
+    <li><a href="forest-health.html">Forest Health</a></li>
+    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="ai-advisor.html" class="active">AI Advisor</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li><a href="workshops.html">Workshops</a></li>
+    <li><a href="news.html">News</a></li>
+    <li><a href="team.html">Team</a></li>
+  </ul>
+  <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">🔍 Search</button>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <h1>Forest AI Advisor</h1>
+      <p>Science-based answers on forest ecosystems</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="advisor-layout">
+
+      <!-- Chat Interface -->
+      <div>
+        <div class="chat-wrap" id="chat-box">
+          <div class="chat-header">
+            <div class="chat-avatar">🌲</div>
+            <div class="chat-header-info">
+              <h4>DigiSylva Forest Advisor</h4>
+              <div class="chat-status"><div class="status-dot"></div> Online · Powered by forest science</div>
+            </div>
+          </div>
+
+          <div class="chat-messages" id="chat-messages">
+            <!-- Initial bot message -->
+            <div class="msg bot">
+              <div class="msg-avatar">🌲</div>
+              <div>
+                <div class="msg-bubble">
+                  Hello! I'm the DigiSylva Forest Advisor - your science-based guide to northeastern forest ecosystems. I can help you with questions about forest carbon, biomass, canopy structure, climate change impacts, and forest management in Maine and the broader Northeast. <br><br>
+                  What would you like to explore today?
+                  <div><span class="source-tag">📚 Based on peer-reviewed forest science</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-suggestions" id="suggestion-chips">
+            <span class="suggestion-chip" onclick="askQuestion(this.textContent)">What is aboveground biomass?</span>
+            <span class="suggestion-chip" onclick="askQuestion(this.textContent)">How does climate affect Maine forests?</span>
+            <span class="suggestion-chip" onclick="askQuestion(this.textContent)">What is the Howland Research Forest?</span>
+            <span class="suggestion-chip" onclick="askQuestion(this.textContent)">What is a canopy height model (CHM)?</span>
+          </div>
+
+          <div class="chat-input-row">
+            <input type="text" class="chat-input" id="chat-input"
+              placeholder="Ask about forest management, carbon, biomass…"
+              onkeydown="if(event.key==='Enter')sendMessage()" />
+            <button class="chat-send" onclick="sendMessage()">➤</button>
+          </div>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-light);margin-top:0.5rem;text-align:center;">
+          ⚠ This advisor provides educational responses based on published forest science. For site-specific management decisions, consult a certified forester.
+        </p>
+      </div>
+
+      <!-- Sidebar: Topics and Resources -->
+      <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+        <div class="map-controls">
+          <h4>💬 Suggested Topics</h4>
+          <div class="topic-grid">
+            <div class="topic-card" onclick="askQuestion('How is LiDAR used to estimate forest biomass?')">
+              <div class="t-icon">🛰️</div>
+              <div class="t-title">LiDAR and Remote Sensing</div>
+            </div>
+            <div class="topic-card" onclick="askQuestion('How do forests sequester carbon?')">
+              <div class="t-icon">♻️</div>
+              <div class="t-title">Carbon Sequestration</div>
+            </div>
+            <div class="topic-card" onclick="askQuestion('What forest management practices are used in Maine?')">
+              <div class="t-icon">🪓</div>
+              <div class="t-title">Forest Management</div>
+            </div>
+            <div class="topic-card" onclick="askQuestion('How is climate change impacting northeastern forests?')">
+              <div class="t-icon">🌡️</div>
+              <div class="t-title">Climate Impacts</div>
+            </div>
+            <div class="topic-card" onclick="askQuestion('What tree species are dominant in Maine forests?')">
+              <div class="t-icon">🌲</div>
+              <div class="t-title">Tree Species</div>
+            </div>
+            <div class="topic-card" onclick="askQuestion('What is the carbon stock in harvested wood products?')">
+              <div class="t-icon">🪵</div>
+              <div class="t-title">Wood Products</div>
+            </div>
+            <div class="topic-card" onclick="askQuestion('What is a forest inventory and analysis (FIA)?')">
+              <div class="t-icon">📊</div>
+              <div class="t-title">FIA Data</div>
+            </div>
+            <div class="topic-card" onclick="askQuestion('How do I interpret an AGB map?')">
+              <div class="t-icon">🗺️</div>
+              <div class="t-title">Map Interpretation</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end sidebar -->
+
+    </div>
+  </div>
+</div>
+
+<script>
+// Knowledge base for the advisor
+const KB = {
+  "aboveground biomass": `**Aboveground Biomass (AGB)** refers to the total mass of living organic material above the soil surface in a forest ecosystem - including trunks, branches, bark, and foliage, but not roots.
+
+AGB is typically expressed in **Mg ha⁻¹** (megagrams per hectare, equivalent to tonnes/ha) or kg m⁻².
+
+In DigiSylva, AGB is derived from **airborne LiDAR** (Light Detection and Ranging) point cloud data collected over the Howland Research Forest in Maine. LiDAR metrics such as mean canopy height and canopy cover density are used in statistical models trained against field measurements to generate spatially continuous AGB maps.
+
+At Howland, mean AGB values range from approximately 0.6 to 14 (relative units), reflecting the mixed-forest landscape with areas of varying density and age.`,
+
+  "canopy height model": `A **Canopy Height Model (CHM)** is a raster data product that represents the maximum height of vegetation above ground for each pixel, typically derived from airborne LiDAR data.
+
+The CHM is calculated by subtracting the Digital Terrain Model (DTM - bare ground elevation) from the Digital Surface Model (DSM - highest point in each pixel). The result shows tree top heights in **meters above ground**.
+
+In the DigiSylva dataset, CHM values at Howland Research Forest range from **0 to ~50 meters**, reflecting the mixed spruce-fir and northern hardwood stand structure. Taller pixels often correspond to mature overstory trees, while lower values indicate gaps, regeneration areas, or understory vegetation.
+
+CHM time series (2012-2025) allow us to track canopy growth, disturbance events, and management interventions over time.`,
+
+  "howland research forest": `The **Howland Research Forest** is located near Howland, Maine (approximately 45.2°N, 68.7°W) in Penobscot County, central Maine.
+
+It is operated by the **USDA Forest Service Northern Research Station** and is recognized as a key AmeriFlux eddy covariance site (US-Ho1), providing decades of carbon flux measurements.
+
+The forest is dominated by **mixed conifers** (red spruce, eastern hemlock, balsam fir) and **northern hardwoods** (red maple, paper birch), and has been the subject of extensive research on:
+- Net ecosystem carbon exchange
+- LiDAR-derived biomass and canopy structure
+- Forest age dynamics and disturbance response
+
+DigiSylva uses the Howland site as its primary demonstration area for multi-temporal LiDAR analysis (2012-2025).`,
+
+  "climate": `**Climate change is significantly impacting forests across the northeastern United States**, including Maine. Key documented and projected impacts include:
+
+🌡 **Temperature Rise:** Mean annual temperatures in the Northeast have increased by ~1.3°C since the early 20th century, shifting growing seasons and species ranges poleward and upward.
+
+🌲 **Species Composition Shifts:** Warmer winters reduce cold tolerance advantages of boreal species (spruce, fir) and allow temperate hardwood expansion into previously boreal zones. Research by Wei et al. (2025) shows that warming-driven shifts in dominant tree species may reduce aboveground biomass in northeastern forests.
+
+❄ **Reduced Snow Pack:** Decreased winter snowpack alters soil moisture dynamics, frost patterns, and seedling establishment.
+
+🐛 **Pest and Pathogen Range Expansion:** Milder winters enable range expansion of damaging insects such as the hemlock woolly adelgid and emerald ash borer northward into Maine forests.
+
+🌧 **Altered Precipitation:** Increased precipitation intensity and drought frequency are changing soil moisture regimes critical for tree growth.`,
+
+  "lidar": `**LiDAR (Light Detection and Ranging)** is a remote sensing technology that uses laser pulses to measure distances to objects. When deployed from aircraft, it can create highly accurate three-dimensional maps of forest structure.
+
+**How it works for forests:**
+1. Laser pulses emitted downward hit and reflect from canopy, branches, and ground
+2. Precise timing of returns gives exact 3D point locations (point cloud)
+3. Multiple return pulses per shot reveal vertical canopy structure
+4. Statistical metrics from the point cloud (height percentiles, canopy density) correlate strongly with field-measured forest attributes
+
+**Products derived from LiDAR:**
+- **CHM** (Canopy Height Model) - tree top heights in meters
+- **AGB** (Aboveground Biomass) - estimated from height-density relationships
+- **Canopy Cover** - fraction of ground covered by canopy
+- **Leaf Area Index (LAI)**
+
+LiDAR is used extensively by researchers at the University of Maine to map and monitor the Howland Research Forest, providing data that underpins the DigiSylva platform.`,
+
+  "carbon": `Forests are one of the Earth's most important **carbon sinks**, sequestering CO₂ from the atmosphere through photosynthesis and storing it in wood, roots, and soil organic matter.
+
+**Key carbon pools in a forest:**
+- **Aboveground biomass** (~50% carbon by dry weight)
+- **Belowground biomass** (roots)
+- **Dead wood** (coarse woody debris, snags)
+- **Litter** (forest floor organic layer)
+- **Soil organic carbon** (largest pool)
+
+**In northeastern U.S. forests:** Maine's forests alone sequester millions of tonnes of CO₂ equivalent per year. Research by Wei et al. (2023) developed carbon accounting tools for harvested wood products, showing that lumber and engineered wood products continue storing carbon for decades.
+
+**Harvested Wood Products (HWP):** When timber is harvested, a portion of the carbon remains stored in wood products (furniture, lumber, paper). The *carbon substitution effect* - replacing fossil-fuel-intensive materials - provides additional climate benefits.`,
+
+  "maine forest": `Maine is the **most forested state in the United States**, with approximately 17.6 million acres of forestland covering nearly 90% of its land area.
+
+**Major forest types:**
+- **Spruce-Fir:** Dominates northern Maine; commercially important for pulpwood and lumber; provides habitat for boreal wildlife including the Canada lynx
+- **Northern Hardwood:** Sugar maple, yellow birch, beech; valuable for maple syrup, high-quality lumber
+- **Mixed Forest:** Transitional communities blending conifers and hardwoods across much of central Maine
+- **Lowland Softwoods:** Black spruce and tamarack in wetland areas
+
+**Economic importance:** The forest products sector is a cornerstone of Maine's economy - generating billions in economic output and thousands of jobs in logging, milling, and paper production.
+
+**Ecological services:** Maine's forests regulate water quality for hundreds of watersheds, provide critical wildlife habitat including for migratory birds, and sequester significant quantities of atmospheric carbon.`,
+
+  "management": `**Forest management** in Maine and the Northeast encompasses a range of silvicultural practices designed to meet ecological, economic, and social objectives.
+
+**Common practices:**
+- **Selection cutting:** Removing individual or small groups of trees to maintain uneven-aged stand structure - common in northern hardwood forests
+- **Clearcut with retention:** Harvesting most merchantable timber while retaining legacy trees for wildlife and regeneration
+- **Shelterwood:** Two-stage harvest that removes overstory after desirable regeneration is established
+- **Precommercial thinning:** Removing young trees to concentrate growth on crop trees - accelerates biomass accumulation
+
+**Management and carbon:** Research by Zhao et al. (2023) and Wei et al. (2022, 2023) has shown that both active management and long-rotation forestry can play important roles in maximizing carbon storage across the forest-products lifecycle.
+
+**Challenges:** Climate change, invasive species, changing markets (especially for paper), and shifting landowner priorities are reshaping management decisions across the Northeast.`,
+
+  "fia": `The **Forest Inventory and Analysis (FIA)** program, run by the USDA Forest Service, is the nation's comprehensive forest monitoring system.
+
+FIA maintains a systematic network of permanent forest plots (~1 per 6,000 acres nationally) that are remeasured on a cycle of 5-7 years. Data collected includes:
+- Tree species, diameter, height, and condition
+- Stand age and origin
+- Forest type and ownership
+- Down woody debris and understory vegetation
+
+**PyFIA:** The DigiSylva team (Wei et al., 2025) developed **PyFIA**, a Python package for analyzing and visualizing FIA data, published in *Carbon Balance and Management*. PyFIA simplifies access to the FIA database for forest scientists and managers.
+
+FIA data underpins regional carbon accounting, timber supply analyses, and biodiversity assessments across all U.S. forest types.`,
+
+  "wood products": `**Harvested Wood Products (HWP)** are an important but often overlooked component of the forest carbon cycle.
+
+When trees are harvested, carbon does not immediately return to the atmosphere - much of it remains stored in:
+- **Structural lumber and engineered wood** (decades to centuries)
+- **Furniture and millwork** (decades)
+- **Paper and packaging** (months to years, then potentially landfilled)
+
+**Research at UMaine:** Wei et al. (2022) quantified how technological advancements in wood processing (higher lumber recovery, more engineered wood products) have expanded carbon storage in HWP from Maine's forests. A subsequent paper (Wei et al., 2023) developed a life-cycle and product-type-based estimator for carbon stored in wood products.
+
+The HWP carbon pool is now included in national greenhouse gas inventories and forest carbon accounting frameworks under IPCC guidelines.`,
+
+  "agb map": `Interpreting an **AGB (Aboveground Biomass) map** from DigiSylva involves understanding both the color scale and the spatial patterns.
+
+**Color scale (green gradient):**
+- **Light yellow-green** = low biomass (open areas, young regeneration, gaps)
+- **Medium green** = moderate biomass (mid-successional stands, mixed forest)
+- **Dark green** = high biomass (dense, mature forest areas)
+
+**Spatial patterns to look for:**
+- **Uniformly high values** → mature, closed-canopy forest
+- **Patchy low values** → harvested areas, natural disturbances, wetlands
+- **Gradual transitions** → age gradients following management history
+
+**Temporal change:** Compare the same location across years (2012→2025) to detect:
+- Growth: increasing AGB over time = carbon uptake
+- Disturbance: sudden drops in AGB = harvest, windthrow, insects
+- Recovery: gradual increase after disturbance
+
+Transparent pixels indicate no-data areas (outside the surveyed extent or water bodies).`
+};
+
+function matchKB(text) {
+  const lower = text.toLowerCase();
+  for (const [key, answer] of Object.entries(KB)) {
+    const words = key.split(' ');
+    if (words.every(w => lower.includes(w))) return answer;
+  }
+  // Partial matching
+  if (lower.includes('biomass') || lower.includes('agb')) return KB['aboveground biomass'];
+  if (lower.includes('chm') || lower.includes('canopy height')) return KB['canopy height model'];
+  if (lower.includes('howland')) return KB['howland research forest'];
+  if (lower.includes('climate') || lower.includes('warming') || lower.includes('temperature')) return KB['climate'];
+  if (lower.includes('lidar') || lower.includes('laser') || lower.includes('point cloud')) return KB['lidar'];
+  if (lower.includes('carbon') || lower.includes('co2') || lower.includes('sequestration') || lower.includes('sink')) return KB['carbon'];
+  if (lower.includes('maine') || lower.includes('spruce') || lower.includes('fir') || lower.includes('hardwood')) return KB['maine forest'];
+  if (lower.includes('management') || lower.includes('harvest') || lower.includes('silviculture') || lower.includes('thinning')) return KB['management'];
+  if (lower.includes('fia') || lower.includes('inventory') || lower.includes('pyfia')) return KB['fia'];
+  if (lower.includes('wood product') || lower.includes('hwp') || lower.includes('lumber')) return KB['wood products'];
+  if (lower.includes('interpret') || lower.includes('read') || lower.includes('map')) return KB['agb map'];
+  return null;
+}
+
+function formatText(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function addMessage(role, text, isTyping = false) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const avatarDiv = document.createElement('div');
+  avatarDiv.className = 'msg-avatar';
+  avatarDiv.textContent = role === 'bot' ? '🌲' : '👤';
+
+  const bubbleWrap = document.createElement('div');
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+
+  if (isTyping) {
+    bubble.innerHTML = `<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+    div.id = 'typing-msg';
+  } else {
+    bubble.innerHTML = formatText(text);
+    if (role === 'bot') {
+      const src = document.createElement('div');
+      src.innerHTML = '<span class="source-tag">📚 Based on peer-reviewed forest science</span>';
+      bubble.appendChild(src);
+    }
+  }
+
+  bubbleWrap.appendChild(bubble);
+  div.appendChild(avatarDiv);
+  div.appendChild(bubbleWrap);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  askQuestion(q);
+}
+
+function askQuestion(q) {
+  document.getElementById('chat-input').value = '';
+  addMessage('user', q);
+
+  // Typing indicator
+  const typingEl = addMessage('bot', '', true);
+
+  setTimeout(() => {
+    typingEl.remove();
+    const answer = matchKB(q);
+    if (answer) {
+      addMessage('bot', answer);
+    } else {
+      addMessage('bot', `That's a great question! While I don't have a specific answer ready for "${q}" in my knowledge base, I can suggest:
+
+- Checking our **Publications** page for peer-reviewed research from the DigiSylva team
+- Exploring the **Forest Map** to visually investigate the data
+- Contacting our team via the **Team** page for expert guidance
+
+Is there anything else I can help you with about forest biomass, canopy height, or northeastern forest ecosystems?`);
+    }
+  }, 900 + Math.random() * 600);
+}
+</script>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>© 2026 DigiSylva. Released on 12/03/2025. Updated on 07/04/2026.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../js/search.js"></script>
+</body>
+</html>

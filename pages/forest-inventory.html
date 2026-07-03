@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forest Inventory - DigiSylva</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    html, body { height: 100%; }
+    body { display: flex; flex-direction: column; padding-top: var(--nav-h); overflow: hidden; }
+
+    .inv-toolbar {
+      padding: 0.6rem 1.5rem; background: white; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .inv-toolbar .toolbar-label { font-size: 0.8rem; font-weight: 600; color: var(--text-light); letter-spacing: 0.05em; }
+    .site-legend { display: flex; gap: 0.85rem; align-items: center; margin-left: auto; flex-wrap: wrap; }
+    .site-legend span { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--text-mid); }
+    .site-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
+
+    .inv-layout { display: grid; grid-template-columns: 1fr 380px; flex: 1; min-height: 0; }
+    #inv-map { height: 100%; background: #eef3ee; }
+    .inv-card { background: white; border-left: 1px solid var(--border); overflow-y: auto; padding: 1.25rem 1.4rem; }
+
+    .inv-empty { color: var(--text-light); font-size: 0.9rem; text-align: center; padding: 3rem 1rem; line-height: 1.6; }
+    .inv-plot-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; }
+    .inv-plot-head h3 { color: var(--green-dark); font-family: 'Inter', sans-serif; font-size: 1.15rem; margin: 0; }
+    .site-badge { font-size: 0.7rem; font-weight: 700; color: #fff; padding: 0.15rem 0.55rem; border-radius: 100px; }
+
+    .inv-sec-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; color: var(--text-light); margin: 1.25rem 0 0.5rem; }
+    .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.75rem; }
+    .kv .k { font-size: 0.78rem; color: var(--text-light); }
+    .kv .v { font-size: 0.82rem; font-weight: 600; color: var(--green-dark); }
+
+    table.inv-tbl { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    table.inv-tbl th { text-align: right; color: var(--green-dark); font-weight: 600; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--border); }
+    table.inv-tbl th:first-child { text-align: left; }
+    table.inv-tbl td { text-align: right; padding: 0.28rem 0.4rem; border-bottom: 1px solid #eef3ef; color: var(--text-mid); }
+    table.inv-tbl td:first-child { text-align: left; font-weight: 600; color: var(--green-dark); }
+
+    .tree-btn {
+      width: 100%; margin-top: 1rem; padding: 0.6rem; border: none; border-radius: var(--radius-sm);
+      background: var(--green-mid); color: #fff; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-family: 'Inter', sans-serif;
+    }
+    .tree-btn:hover { background: var(--green-dark); }
+
+    /* Tree map modal */
+    .tm-overlay { position: fixed; inset: 0; background: rgba(10,20,12,0.6); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(3px); }
+    .tm-overlay.on { display: flex; }
+    .tm-modal { background: #fff; border-radius: var(--radius-lg); width: 100%; max-width: 720px; max-height: 92vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,.4); }
+    .tm-head { display: flex; align-items: center; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border); }
+    .tm-head h4 { margin: 0; color: var(--green-dark); font-family: 'Inter', sans-serif; font-size: 1rem; }
+    .tm-head .tm-sub { font-size: 0.78rem; color: var(--text-light); margin-left: 0.6rem; }
+    .tm-close { margin-left: auto; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-light); line-height: 1; }
+    .tm-body { display: grid; grid-template-columns: 1fr 180px; gap: 1rem; padding: 1.25rem; overflow: auto; }
+    #tm-svg-wrap { display: flex; align-items: center; justify-content: center; }
+    .tm-legend { font-size: 0.76rem; overflow-y: auto; max-height: 420px; }
+    .tm-legend .lg-title { font-weight: 700; color: var(--green-dark); margin-bottom: 0.5rem; font-size: 0.72rem; letter-spacing: 0.05em; }
+    .tm-legend .lg-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.3rem; color: var(--text-mid); }
+    .tm-legend .lg-sw { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .tm-note { font-size: 0.72rem; color: var(--text-light); margin-top: 0.6rem; line-height: 1.5; }
+    .tree-dot { cursor: pointer; }
+    .tm-tip { position: fixed; background: #1b4332; color: #fff; font-size: 0.72rem; padding: 0.3rem 0.5rem; border-radius: 5px; pointer-events: none; z-index: 10001; display: none; white-space: nowrap; }
+
+    @media (max-width: 900px) {
+      body { display: block; overflow: auto; }
+      .inv-layout { grid-template-columns: 1fr; }
+      #inv-map { height: 55vh; }
+      .inv-card { border-left: none; border-top: 1px solid var(--border); }
+      .tm-body { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="../index.html">
+    <img src="../assets/DigiSylva_mark.png" alt="" class="brand-mark" />
+    <span class="digisylva-logo"><span class="d-digi">Digi</span><span class="d-s">S</span><span class="d-y">y</span><span class="d-l">l</span><span class="d-v">v</span><span class="d-a">a</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="naip.html">Forest Explorer</a></li>
+    <li><a href="forest-inventory.html" class="active">Forest Inventory</a></li>
+    <li><a href="map.html">Forest Map</a></li>
+    <li><a href="prediction.html">Forest Prediction</a></li>
+    <li><a href="forest-health.html">Forest Health</a></li>
+    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="ai-advisor.html">AI Advisor</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li><a href="workshops.html">Workshops</a></li>
+    <li><a href="news.html">News</a></li>
+    <li><a href="team.html">Team</a></li>
+  </ul>
+  <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">🔍 Search</button>
+</nav>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1>Forest Inventory</h1>
+    <p>Field plots with biomass and LiDAR structure metrics</p>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="inv-toolbar">
+  <span class="toolbar-label">Site:</span>
+  <select id="site-select" class="form-select" style="width:auto;min-width:150px;" onchange="filterSite(this.value)"></select>
+  <span class="toolbar-label" style="margin-left:0.75rem;">Base:</span>
+  <select id="base-select" class="form-select" style="width:auto;min-width:110px;" onchange="setBase(this.value)">
+    <option value="streets">Streets</option>
+    <option value="satellite">Satellite</option>
+    <option value="topo">Topo</option>
+  </select>
+  <span id="plot-count" style="font-size:0.8rem;color:var(--green-mid);font-weight:600;margin-left:0.5rem;"></span>
+</div>
+
+<!-- Layout -->
+<div class="inv-layout">
+  <div id="inv-map"></div>
+  <div class="inv-card" id="inv-card">
+    <div class="inv-empty">🌲<br><br>Click a plot on the map to view its inventory details, biomass and LiDAR time series, and tree map.</div>
+  </div>
+</div>
+
+<!-- Tree map modal -->
+<div class="tm-overlay" id="tm-overlay">
+  <div class="tm-modal">
+    <div class="tm-head">
+      <h4 id="tm-title">Tree map</h4>
+      <span class="tm-sub" id="tm-sub"></span>
+      <button class="tm-close" onclick="closeTreeMap()" title="Close">✕</button>
+    </div>
+    <div class="tm-body">
+      <div id="tm-svg-wrap"></div>
+      <div class="tm-legend">
+        <div class="lg-title">SPECIES</div>
+        <div id="tm-legend-list"></div>
+        <div class="tm-note">Dot position = azimuth and distance from plot center. Dot size scales with DBH. Hollow dots are snags. North is up.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="tm-tip" id="tm-tip"></div>
+
+<script src="../assets/Inventory_Data/inventory_data.js"></script>
+<script>
+// ===================== Setup =====================
+const SITE_NAMES = { HL: 'Howland', SC: 'Schoodic Forest' };
+const SITE_PALETTE = ['#2e7d32','#1565c0','#ef6c00','#7b1fa2','#c62828','#00838f','#5d4037','#ad1457'];
+const SITE_COLORS = {};
+[...new Set(window.INV_PLOTS.map(p => p.site))].sort().forEach((s, i) => SITE_COLORS[s] = SITE_PALETTE[i % SITE_PALETTE.length]);
+function siteName(s) { return SITE_NAMES[s] || s; }
+const YEARS = window.INV_YEARS;
+const PLOTS = window.INV_PLOTS;
+const TREES = window.INV_TREES;
+
+// species -> color
+const SPP_PALETTE = ['#2e7d32','#1565c0','#ef6c00','#6a1b9a','#c62828','#00838f','#9e9d24','#4e342e','#ad1457','#283593','#00695c','#f9a825','#5d4037','#0277bd','#8e24aa','#558b2f','#d84315','#455a64','#c2185b','#3949ab','#00acc1','#8d6e63'];
+const allSpp = [...new Set(Object.values(TREES).flat().map(t => t.sp))].sort();
+const SPP_COLOR = {};
+allSpp.forEach((s,i) => SPP_COLOR[s] = SPP_PALETTE[i % SPP_PALETTE.length]);
+
+let map, baseLayers = {}, plotMarkers = {}, selectedMarker = null, agbChart = null, currentPlot = null;
+
+// ===================== Map =====================
+function initMap() {
+  map = L.map('inv-map', { zoomControl: true });
+  baseLayers.streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
+  baseLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '© Esri', maxZoom: 18 });
+  baseLayers.topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenTopoMap', maxZoom: 17 });
+
+  PLOTS.forEach(pl => {
+    const m = L.circleMarker([pl.lat, pl.lon], {
+      radius: 5, color: '#fff', weight: 1.5, fillColor: SITE_COLORS[pl.site] || '#555', fillOpacity: 0.9
+    });
+    m.on('click', () => selectPlot(pl.p));
+    m.bindTooltip(pl.p, { direction: 'top' });
+    m._plot = pl;
+    plotMarkers[pl.p] = m;
+    m.addTo(map);
+  });
+  fitTo(PLOTS);
+  buildSiteControls();
+}
+
+function fitTo(list) {
+  if (!list.length) return;
+  const b = L.latLngBounds(list.map(p => [p.lat, p.lon]));
+  map.fitBounds(b.pad(0.15));
+}
+
+function setBase(name) {
+  Object.values(baseLayers).forEach(l => map.removeLayer(l));
+  baseLayers[name].addTo(map);
+}
+
+function buildSiteControls() {
+  const sites = [...new Set(PLOTS.map(p => p.site))];
+  const sel = document.getElementById('site-select');
+  sel.innerHTML = '<option value="ALL">All sites (' + PLOTS.length + ')</option>' +
+    sites.map(s => `<option value="${s}">${siteName(s)} (${PLOTS.filter(p=>p.site===s).length})</option>`).join('');
+  document.getElementById('plot-count').textContent = PLOTS.length + ' plots';
+}
+
+function filterSite(site) {
+  const shown = [];
+  PLOTS.forEach(pl => {
+    const vis = site === 'ALL' || pl.site === site;
+    const m = plotMarkers[pl.p];
+    if (vis) { m.addTo(map); shown.push(pl); } else { map.removeLayer(m); }
+  });
+  document.getElementById('plot-count').textContent = shown.length + ' plots';
+  fitTo(shown);
+}
+
+// ===================== Details card =====================
+const fmt = (v, d=2) => (v === null || v === undefined || isNaN(v)) ? '-' : (+v).toFixed(d);
+
+function selectPlot(pid) {
+  const pl = PLOTS.find(p => p.p === pid);
+  if (!pl) return;
+  currentPlot = pl;
+  // highlight
+  Object.values(plotMarkers).forEach(m => m.setStyle({ radius: 5, weight: 1.5 }));
+  const sm = plotMarkers[pid];
+  sm.setStyle({ radius: 8, weight: 3, color: '#ffd000' });
+  sm.bringToFront();
+  map.setView([pl.lat, pl.lon], Math.max(map.getZoom(), 13));
+
+  const trees = TREES[pl.p] || [];
+  const lidarRows = pl.lidar.map(l =>
+    `<tr><td>${l.y} ${l.s}</td><td>${fmt(l.mh,1)}</td><td>${fmt(l.xh,1)}</td><td>${fmt(l.pd,1)}</td></tr>`).join('');
+  const tsRows = YEARS.map((y,i) =>
+    `<tr><td>${y}</td><td>${fmt(pl.agb[i],2)}</td><td>${fmt(pl.vol[i],1)}</td></tr>`).join('');
+
+  document.getElementById('inv-card').innerHTML = `
+    <div class="inv-plot-head">
+      <h3>${pl.p}</h3>
+      <span class="site-badge" style="background:${SITE_COLORS[pl.site]||'#555'}">${siteName(pl.site)}</span>
+    </div>
+    <div style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.4rem;">${pl.lat.toFixed(5)}, ${pl.lon.toFixed(5)}</div>
+
+    <div class="inv-sec-title">PLOT GEOMETRY</div>
+    <div class="kv">
+      <div class="k">Radius</div><div class="v">${fmt(pl.rad,2)} m</div>
+      <div class="k">Area</div><div class="v">${fmt(pl.area,0)} m²</div>
+      <div class="k">Trees</div><div class="v">${pl.ntrees ?? trees.length}</div>
+      <div class="k">Density (TPH)</div><div class="v">${fmt(pl.tph,0)}</div>
+      <div class="k">UTM N</div><div class="v">${fmt(pl.n,1)}</div>
+      <div class="k">UTM E</div><div class="v">${fmt(pl.e,1)}</div>
+    </div>
+
+    <div class="inv-sec-title">ABOVEGROUND BIOMASS AND VOLUME</div>
+    <div style="position:relative;height:150px;margin-bottom:0.5rem;"><canvas id="agb-chart"></canvas></div>
+    <table class="inv-tbl">
+      <thead><tr><th>Year</th><th>AGB (Mg)</th><th>Volume (m³)</th></tr></thead>
+      <tbody>${tsRows}</tbody>
+    </table>
+
+    <div class="inv-sec-title">LiDAR STRUCTURE METRICS</div>
+    ${pl.lidar.length ? `<table class="inv-tbl">
+      <thead><tr><th>Year / sensor</th><th>Mean H (m)</th><th>Max H (m)</th><th>Density (/m²)</th></tr></thead>
+      <tbody>${lidarRows}</tbody></table>` : '<div style="font-size:0.8rem;color:var(--text-light);">No LiDAR metrics.</div>'}
+
+    <button class="tree-btn" onclick="openTreeMap()">🌳 View tree map (${trees.length} trees)</button>
+  `;
+  buildAgbChart(pl);
+}
+
+function buildAgbChart(pl) {
+  const ctx = document.getElementById('agb-chart').getContext('2d');
+  if (agbChart) agbChart.destroy();
+  agbChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: YEARS.map(String), datasets: [
+      { label: 'AGB (Mg)', data: pl.agb, borderColor: '#2d6a4f', backgroundColor: 'rgba(45,106,79,0.12)', borderWidth: 2, pointRadius: 3, tension: 0.3, yAxisID: 'y', fill: true, spanGaps: true },
+      { label: 'Volume (m³)', data: pl.vol, borderColor: '#c9a84c', borderWidth: 2, pointRadius: 3, tension: 0.3, yAxisID: 'y2', fill: false, spanGaps: true }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 14 } } },
+      scales: {
+        x: { ticks: { font: { size: 9 } } },
+        y: { position: 'left', ticks: { font: { size: 9 }, color: '#2d6a4f' }, title: { display: false } },
+        y2: { position: 'right', ticks: { font: { size: 9 }, color: '#b9982f' }, grid: { drawOnChartArea: false } }
+      } }
+  });
+}
+
+// ===================== Tree map =====================
+function openTreeMap() {
+  if (!currentPlot) return;
+  const pl = currentPlot;
+  const trees = (TREES[pl.p] || []).filter(t => t.az !== null && t.d !== null);
+  document.getElementById('tm-title').textContent = 'Tree map - ' + pl.p;
+  document.getElementById('tm-sub').textContent = trees.length + ' trees · radius ' + fmt(pl.rad,1) + ' m';
+
+  const R = pl.rad || Math.max(...trees.map(t => t.d), 8) + 1;
+  const size = 380, cx = size/2, cy = size/2, scale = (size/2 - 24) / R;
+  const dbhs = trees.map(t => t.dbh).filter(v => v);
+  const maxDbh = dbhs.length ? Math.max(...dbhs) : 30;
+  const rFor = d => 3 + 7 * Math.sqrt((d || 5) / (maxDbh || 30));
+
+  let svg = `<svg id="tm-svg" viewBox="0 0 ${size} ${size}" width="100%" style="max-width:${size}px;">`;
+  // plot circle + rings
+  svg += `<circle cx="${cx}" cy="${cy}" r="${R*scale}" fill="#f3f8f3" stroke="#2d6a4f" stroke-width="1.5"/>`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="${R*scale/2}" fill="none" stroke="#cfe3d2" stroke-width="1" stroke-dasharray="3 3"/>`;
+  svg += `<line x1="${cx}" y1="${cy-R*scale}" x2="${cx}" y2="${cy+R*scale}" stroke="#e3efe4" stroke-width="1"/>`;
+  svg += `<line x1="${cx-R*scale}" y1="${cy}" x2="${cx+R*scale}" y2="${cy}" stroke="#e3efe4" stroke-width="1"/>`;
+  svg += `<text x="${cx}" y="${cy-R*scale-8}" text-anchor="middle" font-size="11" fill="#2d6a4f" font-weight="700">N</text>`;
+  // trees
+  trees.forEach(t => {
+    const a = (t.az || 0) * Math.PI / 180;
+    const x = cx + (t.d * scale) * Math.sin(a);
+    const y = cy - (t.d * scale) * Math.cos(a);
+    const col = SPP_COLOR[t.sp] || '#888';
+    const rr = rFor(t.dbh);
+    const fill = t.snag ? '#fff' : col;
+    svg += `<circle class="tree-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(1)}" fill="${fill}" stroke="${col}" stroke-width="1.5" ` +
+      `data-info="Tree ${t.t} · ${t.sp}${t.snag?' (snag)':''} · DBH ${fmt(t.dbh,1)} cm · H ${fmt(t.h,1)} m"></circle>`;
+  });
+  svg += `</svg>`;
+  document.getElementById('tm-svg-wrap').innerHTML = svg;
+
+  // legend (species present, with counts)
+  const counts = {};
+  trees.forEach(t => counts[t.sp] = (counts[t.sp]||0)+1);
+  document.getElementById('tm-legend-list').innerHTML = Object.keys(counts).sort().map(sp =>
+    `<div class="lg-row"><span class="lg-sw" style="background:${SPP_COLOR[sp]||'#888'}"></span>${sp} (${counts[sp]})</div>`).join('');
+
+  // tooltips
+  const tip = document.getElementById('tm-tip');
+  document.querySelectorAll('#tm-svg .tree-dot').forEach(dot => {
+    dot.addEventListener('mousemove', e => { tip.textContent = dot.getAttribute('data-info'); tip.style.display = 'block'; tip.style.left = (e.clientX+12)+'px'; tip.style.top = (e.clientY+12)+'px'; });
+    dot.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+
+  document.getElementById('tm-overlay').classList.add('on');
+}
+function closeTreeMap() { document.getElementById('tm-overlay').classList.remove('on'); document.getElementById('tm-tip').style.display='none'; }
+document.getElementById('tm-overlay').addEventListener('click', e => { if (e.target.id === 'tm-overlay') closeTreeMap(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTreeMap(); });
+
+// ===================== Start =====================
+document.addEventListener('DOMContentLoaded', initMap);
+</script>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>© 2026 DigiSylva. Released on 12/03/2025. Updated on 07/04/2026.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../js/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forest Explorer - USDA National Agriculture Imagery Program (NAIP)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+  :root {
+    --bg: #0c1a13; --panel: #17392b; --panel2: #204a39; --line: #2e5b47;
+    --text: #e8eef4; --muted: #a9c4b6; --accent: #4da3ff; --accent2: #37c978;
+    --warn: #ffb020; --danger: #ff6b6b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+  body { display: flex; flex-direction: column; }
+  #app { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  /* DigiSylva shared top navigation (matches the site navbar) */
+  .ds-nav { display: flex; align-items: center; height: 64px; background: #1b4332; padding: 0 2rem; flex-shrink: 0; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
+  .ds-brand { display: flex; align-items: center; gap: .5rem; margin-right: 2rem; text-decoration: none; flex-shrink: 0; }
+  .ds-brand-mark { height: 40px; width: auto; margin-right: 8px; }
+  .ds-brand .digisylva-logo { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; letter-spacing: .02em; line-height: 1; font-size: 1.3rem; }
+  .ds-brand .d-digi { color: #6cb5ff; }
+  .ds-brand .d-s { color: #52b788; }
+  .ds-brand .d-y { color: #5cbf90; }
+  .ds-brand .d-l { color: #6ac79b; }
+  .ds-brand .d-v { color: #7ed0a8; }
+  .ds-brand .d-a { color: #95d5b2; }
+  .ds-links { display: flex; align-items: center; gap: .25rem; list-style: none; margin: 0; padding: 0; flex: 1; }
+  .ds-links a { display: block; padding: .45rem .85rem; color: rgba(255,255,255,.82); font-size: .875rem; font-weight: 500; border-radius: 6px; text-decoration: none; white-space: nowrap; }
+  .ds-links a:hover { background: rgba(255,255,255,.12); color: #fff; }
+  .ds-links a.active { background: #52b788; color: #1b4332; font-weight: 600; }
+  .ds-search { margin-left: auto; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 6px; color: rgba(255,255,255,.85); cursor: pointer; padding: .35rem .85rem; font-size: .8rem; font-weight: 500; white-space: nowrap; display: flex; align-items: center; gap: .35rem; flex-shrink: 0; }
+  .ds-search:hover { background: rgba(255,255,255,.22); color: #fff; }
+
+  header {
+    display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+    background: var(--panel); border-bottom: 1px solid var(--line); z-index: 1000;
+  }
+  header h1 { font-size: 17px; font-weight: 600; white-space: nowrap; }
+  header h1 span { color: var(--accent); }
+  header .sub { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  #searchWrap { position: relative; margin-left: auto; width: 320px; max-width: 40vw; }
+  #searchBox {
+    width: 100%; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--text); font-size: 13px; outline: none;
+  }
+  #searchBox:focus { border-color: var(--accent); }
+  #searchResults {
+    position: absolute; top: 36px; left: 0; right: 0; background: var(--panel2);
+    border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: none;
+    max-height: 260px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.5); z-index: 2000;
+  }
+  #searchResults div { padding: 8px 12px; font-size: 12.5px; cursor: pointer; border-bottom: 1px solid var(--line); }
+  #searchResults div:hover { background: var(--panel); }
+
+  #main { display: flex; flex: 1; min-height: 0; }
+  #sidebar {
+    width: 330px; min-width: 330px; background: var(--panel); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; overflow-y: auto;
+  }
+  .section { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .section h2 { font-size: 11px; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .row:last-child { margin-bottom: 0; }
+  .row label { font-size: 13px; min-width: 52px; color: var(--text); }
+  select, input[type=range] {
+    flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--text); font-size: 13px;
+  }
+  .seg { display: flex; flex: 1; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button {
+    flex: 1; padding: 6px 0; background: var(--panel2); color: var(--muted);
+    border: none; cursor: pointer; font-size: 12.5px;
+  }
+  .seg button.active { background: var(--accent); color: #05233f; font-weight: 600; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+    padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel2);
+    color: var(--text); font-size: 13px; cursor: pointer; transition: background .15s;
+  }
+  .btn:hover { background: #2b3c4e; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #05233f; font-weight: 600; }
+  .btn.primary:hover { background: #6cb5ff; }
+  .btn.green { background: var(--accent2); border-color: var(--accent2); color: #052b16; font-weight: 600; }
+  .btn.green:hover { background: #52dd90; }
+  .btn.small { width: auto; padding: 4px 9px; font-size: 12px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .hint { font-size: 11.5px; color: var(--muted); line-height: 1.45; margin-top: 8px; }
+
+  #status {
+    font-size: 12px; color: var(--warn); padding: 0 16px; min-height: 0;
+  }
+  #status:not(:empty) { padding: 8px 16px; }
+
+  #results { flex: 1; }
+  #resultsHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  #resultsHead h2 { margin-bottom: 0; }
+  #sceneCount { font-size: 11.5px; color: var(--accent); }
+  .scene {
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 9px 11px; margin-bottom: 8px; font-size: 12.5px;
+  }
+  .scene:hover { border-color: var(--accent); }
+  .scene .sid { font-family: Consolas, monospace; font-size: 11px; color: var(--accent); word-break: break-all; }
+  .scene .meta { color: var(--muted); margin: 4px 0 7px; font-size: 11.5px; }
+  .scene .acts { display: flex; gap: 6px; }
+  .empty { color: var(--muted); font-size: 12.5px; text-align: center; padding: 18px 8px; line-height: 1.5; }
+
+  #map { flex: 1; background: #0b0e13; }
+  .leaflet-container { font: inherit; }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel2); color: var(--text); }
+  .leaflet-popup-content { font-size: 12.5px; line-height: 1.5; margin: 12px 14px; }
+  .leaflet-popup-content a { color: var(--accent); }
+  .pop-sid { font-family: Consolas, monospace; font-size: 11px; color: var(--accent); word-break: break-all; }
+  .leaflet-bar a { background-color: var(--panel2); color: var(--text); border-bottom-color: var(--line); }
+  .leaflet-bar a:hover { background-color: var(--panel); }
+  /* Draw/measure toolbar: keep light background so the sprite icons stay visible */
+  .leaflet-draw-toolbar a { background-color: #f4f6f8; }
+  .leaflet-draw-toolbar a:hover { background-color: #ffffff; }
+
+  #loader {
+    position: absolute; top: 76px; left: 50%; transform: translateX(-50%); z-index: 1500;
+    background: var(--panel2); border: 1px solid var(--accent); color: var(--text);
+    padding: 7px 16px; border-radius: 20px; font-size: 12.5px; display: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  #loader.on { display: block; }
+  .spin {
+    display: inline-block; width: 11px; height: 11px; border: 2px solid var(--accent);
+    border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite;
+    vertical-align: -1px; margin-right: 7px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 760px) {
+    #main { flex-direction: column; }
+    #sidebar { width: 100%; min-width: 0; max-height: 45%; order: 2; }
+  }
+</style>
+</head>
+<body>
+<nav class="ds-nav">
+  <a class="ds-brand" href="../index.html"><img src="../assets/DigiSylva_mark.png" alt="" class="ds-brand-mark" /><span class="digisylva-logo"><span class="d-digi">Digi</span><span class="d-s">S</span><span class="d-y">y</span><span class="d-l">l</span><span class="d-v">v</span><span class="d-a">a</span></span></a>
+  <ul class="ds-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="naip.html" class="active">Forest Explorer</a></li>
+    <li><a href="forest-inventory.html">Forest Inventory</a></li>
+    <li><a href="map.html">Forest Map</a></li>
+    <li><a href="prediction.html">Forest Prediction</a></li>
+    <li><a href="forest-health.html">Forest Health</a></li>
+    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="ai-advisor.html">AI Advisor</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li><a href="workshops.html">Workshops</a></li>
+    <li><a href="news.html">News</a></li>
+    <li><a href="team.html">Team</a></li>
+  </ul>
+  <button class="ds-search" onclick="document.getElementById('searchBox').focus()" title="Search address or place">🔍 Search</button>
+</nav>
+<div id="app">
+  <header>
+    <h1>Forest <span>Explorer</span></h1>
+    <div class="sub">USDA National Agriculture Imagery Program (NAIP)</div>
+    <div id="searchWrap">
+      <input id="searchBox" type="text" placeholder="Search address or place… (press Enter)" autocomplete="off">
+      <div id="searchResults"></div>
+    </div>
+  </header>
+  <div id="main">
+    <div id="sidebar">
+      <div class="section">
+        <h2>Imagery</h2>
+        <div class="row">
+          <label for="yearSel">Year</label>
+          <select id="yearSel"></select>
+        </div>
+        <div class="row">
+          <label>View</label>
+          <div class="seg" id="modeSeg">
+            <button data-mode="rgb" class="active" title="Natural color (R,G,B)">Natural</button>
+            <button data-mode="cir" title="Color infrared (NIR,R,G) - vegetation appears red">CIR</button>
+            <button data-mode="ndvi" title="Normalized Difference Vegetation Index">NDVI</button>
+          </div>
+        </div>
+        <div class="row">
+          <label for="opacity">Opacity</label>
+          <input id="opacity" type="range" min="0" max="100" value="100">
+        </div>
+        <div class="hint">Blank areas = no NAIP imagery for the selected year. Try another year or click <b>"Show Coverage"</b>.</div>
+      </div>
+      <div class="section">
+        <h2>Coverage and Download</h2>
+        <div class="row"><button class="btn" id="btnCoverage">🗺️ Show Coverage</button></div>
+        <div class="row">
+          <button class="btn primary" id="btnSelect">⬚ Draw Area</button>
+          <button class="btn" id="btnClear">✕ Clear Area</button>
+        </div>
+      </div>
+      <div id="status"></div>
+      <div class="section" id="results">
+        <div id="resultsHead">
+          <h2>Scenes</h2>
+          <span id="sceneCount"></span>
+        </div>
+        <div id="sceneActions" style="display:none; margin-bottom:8px;">
+          <button class="btn green" id="btnUrlList">⬇ Export download-URL list (.txt)</button>
+        </div>
+        <div id="sceneList"><div class="empty">Draw an area on the map to list downloadable NAIP scenes.</div></div>
+      </div>
+    </div>
+    <div id="map"></div>
+  </div>
+</div>
+<div id="loader"><span class="spin"></span><span id="loaderText">Loading…</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script>
+'use strict';
+
+/* ================= Config ================= */
+const PC = 'https://planetarycomputer.microsoft.com/api';
+const STAC_SEARCH = PC + '/stac/v1/search';
+const MOSAIC_REGISTER = PC + '/data/v1/mosaic/register';
+const SAS_SIGN = PC + '/sas/v1/sign?href=';
+const YEARS = [];
+for (let y = 2023; y >= 2010; y--) YEARS.push(String(y));
+const DEFAULT_YEAR = '2022';
+const SEARCH_LIMIT = 250;          // max scenes listed per area search
+const MODE_PARAMS = {
+  rgb:  'assets=image&asset_bidx=' + encodeURIComponent('image|1,2,3'),
+  cir:  'assets=image&asset_bidx=' + encodeURIComponent('image|4,1,2'),
+  ndvi: 'expression=' + encodeURIComponent('(image_b4-image_b1)/(image_b4+image_b1)') +
+        '&rescale=-1,1&colormap_name=rdylgn'
+};
+
+/* ================= State ================= */
+let currentYear = DEFAULT_YEAR;
+let currentMode = 'rgb';
+const mosaicCache = {};            // year -> searchid
+let naipLayer = null;
+let drawingActive = false;
+let lastScenes = [];
+
+/* ================= Map setup ================= */
+const map = L.map('map', { zoomControl: true, center: [39.5, -98.35], zoom: 5, maxZoom: 21 });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 21, maxNativeZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+L.control.scale({ imperial: true }).addTo(map);
+
+const drawnItems = new L.FeatureGroup().addTo(map);   // measure shapes + selection rect
+const coverageLayer = new L.FeatureGroup().addTo(map); // coverage footprints
+
+// Measure toolbar (line + polygon). Rectangle selection is triggered by the sidebar button.
+const drawControl = new L.Control.Draw({
+  position: 'topleft',
+  draw: {
+    polyline: { shapeOptions: { color: '#ffb020', weight: 3 }, metric: true },
+    polygon:  { shapeOptions: { color: '#ffb020', weight: 2, fillOpacity: 0.08 }, allowIntersection: false },
+    rectangle: false, circle: false, marker: false, circlemarker: false
+  },
+  edit: { featureGroup: drawnItems, edit: false, remove: true }
+});
+map.addControl(drawControl);
+
+let selectRectDrawer = new L.Draw.Rectangle(map, { shapeOptions: { color: '#4da3ff', weight: 2, fillOpacity: 0.05 } });
+let selectMode = false;
+
+map.on(L.Draw.Event.DRAWSTART, () => { drawingActive = true; });
+map.on(L.Draw.Event.DRAWSTOP,  () => { setTimeout(() => { drawingActive = false; }, 250); });
+
+map.on(L.Draw.Event.CREATED, (e) => {
+  const layer = e.layer;
+  if (selectMode && e.layerType === 'rectangle') {
+    selectMode = false;
+    drawnItems.addLayer(layer);
+    searchArea(layer.getBounds());
+    return;
+  }
+  // Measure results
+  if (e.layerType === 'polyline') {
+    const lls = layer.getLatLngs();
+    let m = 0;
+    for (let i = 1; i < lls.length; i++) m += lls[i - 1].distanceTo(lls[i]);
+    layer.bindPopup('<b>Distance:</b> ' + fmtDist(m)).addTo(drawnItems).openPopup();
+  } else if (e.layerType === 'polygon') {
+    const lls = layer.getLatLngs()[0];
+    const a = L.GeometryUtil.geodesicArea(lls);
+    layer.bindPopup('<b>Area:</b> ' + fmtArea(a)).addTo(drawnItems).openPopup();
+  } else {
+    drawnItems.addLayer(layer);
+  }
+});
+
+function fmtDist(m) {
+  return m >= 1000 ? (m / 1000).toFixed(2) + ' km  ('+ (m / 1609.344).toFixed(2) +' mi)'
+                   : m.toFixed(0) + ' m  ('+ (m * 3.28084).toFixed(0) +' ft)';
+}
+function fmtArea(a) {
+  if (a >= 1e6) return (a / 1e6).toFixed(2) + ' km²  ('+ (a / 4046.86).toFixed(1) +' acres)';
+  return a.toFixed(0) + ' m²  ('+ (a / 4046.86).toFixed(2) +' acres)';
+}
+
+/* ================= UI helpers ================= */
+const $ = id => document.getElementById(id);
+function loading(txt) {
+  $('loaderText').textContent = txt || 'Loading…';
+  $('loader').classList.toggle('on', !!txt);
+}
+function status(txt) { $('status').textContent = txt || ''; }
+
+/* ================= NAIP mosaic layer ================= */
+async function registerMosaic(year) {
+  if (mosaicCache[year]) return mosaicCache[year];
+  const filter = {
+    op: 'and',
+    args: [
+      { op: '=', args: [{ property: 'collection' }, 'naip'] },
+      { op: 'anyinteracts', args: [{ property: 'datetime' },
+        { interval: [year + '-01-01T00:00:00Z', year + '-12-31T23:59:59Z'] }] }
+    ]
+  };
+  const r = await fetch(MOSAIC_REGISTER, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 'filter-lang': 'cql2-json', filter })
+  });
+  if (!r.ok) throw new Error('Mosaic registration failed (' + r.status + ')');
+  const j = await r.json();
+  mosaicCache[year] = j.id;
+  return j.id;
+}
+
+async function updateNaipLayer() {
+  try {
+    loading('Preparing NAIP ' + currentYear + ' mosaic…');
+    const sid = await registerMosaic(currentYear);
+    const url = PC + '/data/v1/mosaic/' + sid + '/tiles/WebMercatorQuad/{z}/{x}/{y}@1x' +
+                '?collection=naip&format=png&' + MODE_PARAMS[currentMode];
+    if (naipLayer) map.removeLayer(naipLayer);
+    naipLayer = L.tileLayer(url, {
+      minZoom: 6, maxZoom: 21, maxNativeZoom: 19, tileSize: 256,
+      opacity: $('opacity').value / 100,
+      attribution: 'NAIP &copy; USDA FSA · tiles via Microsoft Planetary Computer'
+    }).addTo(map);
+    status(map.getZoom() < 6 ? 'Zoom in (level 6+) to see NAIP imagery.' : '');
+  } catch (err) {
+    status('Failed to load NAIP layer: ' + err.message);
+  } finally {
+    loading(null);
+  }
+}
+map.on('zoomend', () => {
+  if (naipLayer) status(map.getZoom() < 6 ? 'Zoom in (level 6+) to see NAIP imagery.' : '');
+});
+
+/* ================= STAC search ================= */
+async function stacSearch(body) {
+  const r = await fetch(STAC_SEARCH, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('STAC search failed (' + r.status + ')');
+  return r.json();
+}
+function yearRange(y) { return y + '-01-01T00:00:00Z/' + y + '-12-31T23:59:59Z'; }
+
+/* ================= Coverage ================= */
+$('btnCoverage').onclick = async () => {
+  try {
+    loading('Finding NAIP ' + currentYear + ' coverage in view…');
+    coverageLayer.clearLayers();
+    const b = map.getBounds();
+    const j = await stacSearch({
+      collections: ['naip'],
+      bbox: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()],
+      datetime: yearRange(currentYear), limit: SEARCH_LIMIT
+    });
+    const feats = j.features || [];
+    if (!feats.length) { status('No NAIP ' + currentYear + ' scenes in the current view.'); return; }
+    feats.forEach(it => {
+      const gj = L.geoJSON(it.geometry, { style: { color: '#37c978', weight: 1.5, fillOpacity: 0.04 } });
+      gj.bindPopup(scenePopupHtml(it));
+      coverageLayer.addLayer(gj);
+    });
+    status(feats.length + (feats.length === SEARCH_LIMIT ? '+' : '') +
+           ' scene footprints shown for ' + currentYear +
+           (feats.length === SEARCH_LIMIT ? ' (limit reached - zoom in for more detail)' : '') + '.');
+  } catch (err) { status('Coverage query failed: ' + err.message);
+  } finally { loading(null); }
+};
+
+/* ================= Area select and download ================= */
+$('btnSelect').onclick = () => {
+  selectMode = true;
+  selectRectDrawer.enable();
+  status('Draw a rectangle on the map to search scenes for ' + currentYear + '.');
+};
+
+$('btnClear').onclick = () => {
+  drawnItems.clearLayers(); coverageLayer.clearLayers();
+  lastScenes = [];
+  $('sceneList').innerHTML = '<div class="empty">Draw an area on the map to list downloadable NAIP scenes.</div>';
+  $('sceneCount').textContent = ''; $('sceneActions').style.display = 'none';
+  status('');
+};
+
+async function searchArea(bounds) {
+  try {
+    loading('Searching NAIP ' + currentYear + ' scenes…');
+    const j = await stacSearch({
+      collections: ['naip'],
+      bbox: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
+      datetime: yearRange(currentYear), limit: SEARCH_LIMIT
+    });
+    lastScenes = j.features || [];
+    renderScenes();
+  } catch (err) { status('Scene search failed: ' + err.message);
+  } finally { loading(null); }
+}
+
+function renderScenes() {
+  const list = $('sceneList');
+  $('sceneCount').textContent = lastScenes.length
+    ? lastScenes.length + (lastScenes.length === SEARCH_LIMIT ? '+' : '') + ' found' : '';
+  $('sceneActions').style.display = lastScenes.length ? 'block' : 'none';
+  if (!lastScenes.length) {
+    list.innerHTML = '<div class="empty">No NAIP scenes for <b>' + currentYear +
+      '</b> in that area.<br>Try a different year (see “Show coverage”).</div>';
+    status('');
+    return;
+  }
+  status(lastScenes.length === SEARCH_LIMIT ? 'Showing first ' + SEARCH_LIMIT + ' scenes - draw a smaller area to narrow down.' : '');
+  list.innerHTML = '';
+  lastScenes.forEach((it, i) => {
+    const p = it.properties;
+    const div = document.createElement('div');
+    div.className = 'scene';
+    div.innerHTML =
+      '<div class="sid">' + it.id + '</div>' +
+      '<div class="meta">📅 ' + (p.datetime || '').slice(0, 10) +
+      ' · 📏 ' + (p.gsd || '?') + ' m · ' + (p['naip:state'] || '').toUpperCase() + '</div>' +
+      '<div class="acts">' +
+        '<button class="btn small" data-zoom="' + i + '">Zoom</button>' +
+        '<button class="btn small green" data-dl="' + i + '">⬇ GeoTIFF</button>' +
+      '</div>';
+    list.appendChild(div);
+  });
+}
+
+$('sceneList').addEventListener('click', async (e) => {
+  const zi = e.target.getAttribute('data-zoom');
+  const di = e.target.getAttribute('data-dl');
+  if (zi !== null) {
+    const bb = lastScenes[+zi].bbox;
+    map.fitBounds([[bb[1], bb[0]], [bb[3], bb[2]]]);
+  } else if (di !== null) {
+    await downloadScene(lastScenes[+di], e.target);
+  }
+});
+
+async function signHref(href) {
+  const r = await fetch(SAS_SIGN + encodeURIComponent(href));
+  if (!r.ok) throw new Error('URL signing failed (' + r.status + ')');
+  return (await r.json()).href;
+}
+
+async function downloadScene(item, btn) {
+  const orig = btn ? btn.textContent : '';
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = 'Signing…'; }
+    const signed = await signHref(item.assets.image.href);
+    const a = document.createElement('a');
+    a.href = signed; a.download = item.id + '.tif';
+    document.body.appendChild(a); a.click(); a.remove();
+  } catch (err) {
+    status('Download failed: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = orig; }
+  }
+}
+
+/* Export a .txt of signed URLs (for bulk download via wget/aria2/browser manager) */
+$('btnUrlList').onclick = async () => {
+  const btn = $('btnUrlList');
+  btn.disabled = true;
+  try {
+    const lines = [];
+    for (let i = 0; i < lastScenes.length; i++) {
+      btn.textContent = 'Signing ' + (i + 1) + '/' + lastScenes.length + '…';
+      lines.push(await signHref(lastScenes[i].assets.image.href));
+    }
+    const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'naip_' + currentYear + '_download_urls.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    status('URL list exported. Links are pre-signed and valid for a limited time (~30-60 min).');
+  } catch (err) {
+    status('Export failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇ Export download-URL list (.txt)';
+  }
+};
+
+/* ================= Scene info popup (map click) ================= */
+map.on('click', async (e) => {
+  if (drawingActive || selectMode) return;
+  if (map.getZoom() < 9) return; // avoid huge point queries at low zoom
+  try {
+    const j = await stacSearch({
+      collections: ['naip'],
+      intersects: { type: 'Point', coordinates: [e.latlng.lng, e.latlng.lat] },
+      datetime: yearRange(currentYear), limit: 3
+    });
+    const feats = j.features || [];
+    const html = feats.length
+      ? feats.map(scenePopupHtml).join('<hr style="border-color:#32424f;margin:8px 0">')
+      : 'No NAIP <b>' + currentYear + '</b> scene here.<br>Try another year or “Show coverage”.';
+    L.popup({ maxWidth: 320 }).setLatLng(e.latlng).setContent(html).openOn(map);
+  } catch (_) { /* silent */ }
+});
+
+function scenePopupHtml(it) {
+  const p = it.properties;
+  return '<div class="pop-sid">' + it.id + '</div>' +
+    '<b>Date:</b> ' + (p.datetime || '').slice(0, 10) +
+    ' &nbsp;<b>Res:</b> ' + (p.gsd || '?') + ' m' +
+    ' &nbsp;<b>State:</b> ' + (p['naip:state'] || '?').toUpperCase() +
+    '<br><a href="#" onclick="window.__dlById(\'' + it.id + '\', this); return false;">⬇ Download GeoTIFF</a>';
+}
+const popupSceneCache = {};
+window.__dlById = async (id, el) => {
+  try {
+    el.textContent = 'Signing…';
+    let item = lastScenes.find(s => s.id === id) || popupSceneCache[id];
+    if (!item) {
+      const j = await stacSearch({ collections: ['naip'], ids: [id], limit: 1 });
+      item = (j.features || [])[0];
+      if (item) popupSceneCache[id] = item;
+    }
+    if (!item) throw new Error('scene not found');
+    await downloadScene(item, null);
+    el.textContent = '⬇ Download GeoTIFF';
+  } catch (err) {
+    el.textContent = 'Failed - retry?';
+  }
+};
+// Cache popup items when creating coverage popups
+coverageLayer.on('popupopen', () => {});
+
+/* ================= Year and mode and opacity controls ================= */
+const yearSel = $('yearSel');
+YEARS.forEach(y => {
+  const o = document.createElement('option');
+  o.value = y; o.textContent = y;
+  yearSel.appendChild(o);
+});
+yearSel.value = DEFAULT_YEAR;
+yearSel.onchange = () => {
+  currentYear = yearSel.value;
+  coverageLayer.clearLayers();
+  updateNaipLayer();
+};
+
+$('modeSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#modeSeg button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  currentMode = b.getAttribute('data-mode');
+  updateNaipLayer();
+});
+
+$('opacity').oninput = () => { if (naipLayer) naipLayer.setOpacity($('opacity').value / 100); };
+
+/* ================= Address search (Nominatim) ================= */
+const searchBox = $('searchBox'), searchResults = $('searchResults');
+searchBox.addEventListener('keydown', async (e) => {
+  if (e.key !== 'Enter') return;
+  const q = searchBox.value.trim();
+  if (!q) return;
+  // Coordinates? "lat, lon"
+  const m = q.match(/^\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*$/);
+  if (m) { map.setView([+m[1], +m[3]], 14); return; }
+  try {
+    loading('Searching places…');
+    let res = [];
+    try {
+      const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&limit=6&q=' + encodeURIComponent(q));
+      if (!r.ok) throw new Error('nominatim ' + r.status);
+      res = await r.json();
+    } catch (_) {
+      // Fallback geocoder (Photon)
+      const r2 = await fetch('https://photon.komoot.io/api/?limit=6&q=' + encodeURIComponent(q));
+      const g = await r2.json();
+      res = (g.features || []).map(f => ({
+        display_name: [f.properties.name, f.properties.city, f.properties.state, f.properties.country]
+          .filter(Boolean).join(', '),
+        lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
+        boundingbox: f.properties.extent
+          ? [f.properties.extent[3], f.properties.extent[1], f.properties.extent[0], f.properties.extent[2]]
+          : null
+      }));
+    }
+    searchResults.innerHTML = '';
+    if (!res.length) {
+      searchResults.innerHTML = '<div>No results found</div>';
+    } else {
+      res.forEach(p => {
+        const d = document.createElement('div');
+        d.textContent = p.display_name;
+        d.onclick = () => {
+          searchResults.style.display = 'none';
+          if (p.boundingbox) {
+            map.fitBounds([[+p.boundingbox[0], +p.boundingbox[2]], [+p.boundingbox[1], +p.boundingbox[3]]]);
+            if (map.getZoom() > 17) map.setZoom(15);
+          } else map.setView([+p.lat, +p.lon], 14);
+        };
+        searchResults.appendChild(d);
+      });
+    }
+    searchResults.style.display = 'block';
+  } catch (_) {
+    status('Place search failed - check your connection.');
+  } finally { loading(null); }
+});
+document.addEventListener('click', (e) => {
+  if (!$('searchWrap').contains(e.target)) searchResults.style.display = 'none';
+});
+
+/* ================= Init ================= */
+updateNaipLayer();
+</script>
+<footer style="background:#1b4332;color:rgba(255,255,255,0.72);padding:0.9rem 1.5rem;text-align:center;font-size:0.8rem;flex-shrink:0;">
+  <span>© 2026 DigiSylva. Released on 12/03/2025. Updated on 07/04/2026.</span>
+</footer>
+</body>
+</html>

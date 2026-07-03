@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Publications - DigiSylva</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .year-section { margin-bottom: 3rem; }
+    .year-heading {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .year-pill {
+      background: var(--green-dark);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 0.35rem 1.1rem;
+      border-radius: 100px;
+      font-family: 'Playfair Display', serif;
+    }
+    .year-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .pub-count { font-size: 0.8rem; color: var(--text-light); white-space: nowrap; }
+    .pub-card { margin-bottom: 0.85rem; }
+    .pub-card:hover { padding-left: calc(1.75rem + 3px); }
+    .first-author-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: #e8f5e9;
+      color: var(--green-dark);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+    }
+    .coauthor-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: #e3f2fd;
+      color: #1565c0;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+    }
+    .journal-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: var(--green-mid);
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+      text-decoration: none;
+    }
+    .journal-link:hover { color: var(--green-dark); text-decoration: underline; }
+    .pub-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .pub-stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .pub-stat-card .val { font-size: 2rem; font-weight: 700; color: var(--green-mid); font-family: 'Playfair Display', serif; }
+    .pub-stat-card .lbl { font-size: 0.78rem; color: var(--text-light); margin-top: 0.2rem; letter-spacing: 0.05em; }
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .filter-btn {
+      padding: 0.4rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      background: white;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-family: 'Inter', sans-serif;
+    }
+    .filter-btn:hover { border-color: var(--green-bright); color: var(--green-mid); }
+    .filter-btn.active { background: var(--green-mid); color: white; border-color: var(--green-mid); }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="../index.html">
+    <img src="../assets/DigiSylva_mark.png" alt="" class="brand-mark" />
+    <span class="digisylva-logo"><span class="d-digi">Digi</span><span class="d-s">S</span><span class="d-y">y</span><span class="d-l">l</span><span class="d-v">v</span><span class="d-a">a</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="naip.html">Forest Explorer</a></li>
+    <li><a href="forest-inventory.html">Forest Inventory</a></li>
+    <li><a href="map.html">Forest Map</a></li>
+    <li><a href="prediction.html">Forest Prediction</a></li>
+    <li><a href="forest-health.html">Forest Health</a></li>
+    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="ai-advisor.html">AI Advisor</a></li>
+    <li><a href="publications.html" class="active">Publications</a></li>
+    <li><a href="workshops.html">Workshops</a></li>
+    <li><a href="news.html">News</a></li>
+    <li><a href="team.html">Team</a></li>
+  </ul>
+  <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">🔍 Search</button>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <h1>Publications</h1>
+      <p>Peer-reviewed research from the DigiSylva team</p>
+
+    </div>
+  </div>
+
+  <div class="section">
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterPubs('all',this)">All Publications</button>
+      <button class="filter-btn" onclick="filterPubs('forest',this)">Forest Ecology</button>
+      <button class="filter-btn" onclick="filterPubs('carbon',this)">Carbon and Biomass</button>
+      <button class="filter-btn" onclick="filterPubs('climate',this)">Climate</button>
+      <button class="filter-btn" onclick="filterPubs('remote',this)">Remote Sensing and Data</button>
+    </div>
+
+    <!-- 2026 -->
+    <div class="year-section">
+      <div class="year-heading">
+        <div class="year-pill">2026</div>
+        <div class="year-line"></div>
+        <div class="pub-count">1 publication</div>
+      </div>
+      <div class="pub-card card" data-tags="first remote carbon">
+        <div style="display:flex;gap:1.25rem;">
+          <div class="pub-year-badge">2026<br>CBM</div>
+          <div class="pub-content" style="flex:1;">
+            <h4>PyFIA: Analyzing and Visualizing Forest Attributes Using the United States Forest Inventory and Analysis Database</h4>
+            <div class="pub-authors">Wei, X., Hayes, D., McHale, G., Zhao, J., Weiskittel, A., and Daigneault, A.</div>
+            <div class="pub-journal">Carbon Balance and Management</div>
+            <a class="journal-link" href="https://link.springer.com/article/10.1186/s13021-025-00364-7" target="_blank">🔗 Carbon Balance and Management (2025)</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2025 -->
+    <div class="year-section">
+      <div class="year-heading">
+        <div class="year-pill">2025</div>
+        <div class="year-line"></div>
+        <div class="pub-count">2 publications</div>
+      </div>
+      <div class="pub-card card" data-tags="first forest carbon climate">
+        <div style="display:flex;gap:1.25rem;">
+          <div class="pub-year-badge">2025<br>FEM</div>
+          <div class="pub-content" style="flex:1;">
+            <h4>Warming-driven shifts in dominant tree species potentially reduce aboveground biomass in northeastern United States forests</h4>
+            <div class="pub-authors">Wei, X., Hayes, D. J., Weiskittel, A., and Zhao, J.</div>
+            <div class="pub-journal">Forest Ecology and Management, 580, 122536</div>
+            <a class="journal-link" href="https://doi.org/10.1016/j.foreco.2024.122536" target="_blank">🔗 DOI: 10.1016/j.foreco.2024.122536</a>
+          </div>
+        </div>
+      </div>
+      <div class="pub-card card" data-tags="forest climate">
+        <div style="display:flex;gap:1.25rem;">
+          <div class="pub-year-badge">2025<br>FEM</div>
+          <div class="pub-content" style="flex:1;">
+            <h4>Forest type, landowner practices, and climate shape tree species diversity in Maine, USA</h4>
+            <div class="pub-authors">Zhao, J., Wei, X., <em>et al.</em></div>
+            <div class="pub-journal">Forest Ecology and Management, 593, 122919</div>
+            <a class="journal-link" href="https://www.sciencedirect.com/science/article/abs/pii/S037811272500427X" target="_blank">🔗 ScienceDirect</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2024 -->
+    <div class="year-section">
+      <div class="year-heading">
+        <div class="year-pill">2024</div>
+        <div class="year-line"></div>
+        <div class="pub-count">1 publication</div>
+      </div>
+      <div class="pub-card card" data-tags="climate forest">
+        <div style="display:flex;gap:1.25rem;">
+          <div class="pub-year-badge">2024<br>EI</div>
+          <div class="pub-content" style="flex:1;">
+            <h4>Influence of climate zone shifts on forest ecosystems in northeastern United States and maritime Canada</h4>
+            <div class="pub-authors">Roy, S., Wei, X., Weiskittel, A., Hayes, D. J., Nelson, P., and Contosta, A. R.</div>
+            <div class="pub-journal">Ecological Indicators, 160, 111921</div>
+            <a class="journal-link" href="https://doi.org/10.1016/j.ecolind.2024.111921" target="_blank">🔗 DOI: 10.1016/j.ecolind.2024.111921</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- page-wrapper -->
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>© 2026 DigiSylva. Released on 12/03/2025. Updated on 07/04/2026.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+function filterPubs(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.querySelectorAll('.pub-card.card').forEach(card => {
+    const tags = card.getAttribute('data-tags') || '';
+    if (type === 'all') {
+      card.style.display = '';
+    } else {
+      card.style.display = tags.includes(type) ? '' : 'none';
+    }
+  });
+
+  // Show/hide year sections with no visible publications
+  document.querySelectorAll('.year-section').forEach(section => {
+    const visible = [...section.querySelectorAll('.pub-card.card')].some(c => c.style.display !== 'none');
+    section.style.display = visible ? '' : 'none';
+  });
+}
+</script>
+
+<script src="../js/search.js"></script>
+</body>
+</html>

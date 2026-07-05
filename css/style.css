@@ -71,6 +71,7 @@ p { color: var(--text-mid); }
   z-index: 1000;
   box-shadow: 0 2px 12px rgba(0,0,0,0.25);
   gap: 0;
+  flex-wrap: nowrap;
 }
 
 .nav-brand {
@@ -107,7 +108,12 @@ p { color: var(--text-mid); }
   gap: 0.25rem;
   list-style: none;
   flex: 1;
+  flex-wrap: nowrap;        /* never fold onto a second line */
+  min-width: 0;
+  overflow-x: auto;         /* if it truly cannot fit, scroll instead of wrapping */
+  scrollbar-width: none;
 }
+.nav-links::-webkit-scrollbar { display: none; }
 
 .nav-links a {
   display: block;
@@ -978,4 +984,19 @@ footer {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--green-bg); }
 ::-webkit-scrollbar-thumb { background: var(--green-light); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--green-bright
+::-webkit-scrollbar-thumb:hover { background: var(--green-bright); }
+
+
+/* ── Keep the top navigation on ONE line on small laptops ── */
+@media (max-width: 1280px) {
+  .navbar { padding: 0 1rem; }
+  .nav-brand { margin-right: 1rem; }
+  .nav-links { gap: 0.1rem; }
+  .nav-links a { padding: 0.4rem 0.55rem; font-size: 0.8rem; }
+  .nav-search-btn { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+}
+@media (max-width: 1040px) {
+  .nav-links a { padding: 0.35rem 0.45rem; font-size: 0.75rem; }
+  .brand-mark { height: 32px; }
+  .digisylva-logo { font-size: 1.1rem; }
+}

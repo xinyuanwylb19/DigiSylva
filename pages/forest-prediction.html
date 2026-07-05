@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forest Prediction - DigiSylva</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .pred-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 1.5rem;
+    }
+    .pred-sidebar { display: flex; flex-direction: column; gap: 1rem; }
+    .chart-tall { height: 320px; position: relative; }
+    .model-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--green-pale);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.3rem 0.9rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--green-mid);
+    }
+    .accuracy-bar-wrap { margin-top: 0.5rem; }
+    .accuracy-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-mid); margin-bottom: 0.25rem; }
+    .accuracy-bar { height: 8px; background: var(--green-pale); border-radius: 4px; overflow: hidden; }
+    .accuracy-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--green-bright), var(--green-mid)); }
+    .result-highlight {
+      background: linear-gradient(135deg, var(--green-dark), var(--green-mid));
+      color: white;
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+      margin-top: 0.75rem;
+    }
+    .result-highlight .big { font-size: 2.25rem; font-weight: 700; font-family: 'Playfair Display', serif; color: var(--green-light); }
+    .result-highlight .lbl { font-size: 0.82rem; color: rgba(255,255,255,0.7); margin-top: 0.25rem; }
+    .scenario-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .scenario-card:hover, .scenario-card.active { border-color: var(--green-bright); box-shadow: var(--shadow-sm); }
+    .scenario-card.active { background: var(--green-pale); }
+    .scenario-card h5 { font-size: 0.9rem; color: var(--green-dark); margin-bottom: 0.2rem; font-family: 'Inter', sans-serif; font-weight: 600; }
+    .scenario-card p { font-size: 0.78rem; color: var(--text-mid); }
+    /* Fill the full page width (no centered max-width strip) */
+    .section { max-width: none; }
+    @media (max-width: 900px) { .pred-layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="../index.html">
+    <img src="../assets/DigiSylva_mark.png" alt="" class="brand-mark" />
+    <span class="digisylva-logo"><span class="d-digi">Digi</span><span class="d-s">S</span><span class="d-y">y</span><span class="d-l">l</span><span class="d-v">v</span><span class="d-a">a</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="forest-explorer.html">Forest Explorer</a></li>
+    <li><a href="forest-inventory.html">Forest Inventory</a></li>
+    <li><a href="forest-map.html">Forest Map</a></li>
+    <li><a href="forest-prediction.html" class="active">Forest Prediction</a></li>
+    <li><a href="forest-health.html">Forest Health</a></li>
+    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="ai-advisor.html">AI Advisor</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li><a href="workshops.html">Workshops</a></li>
+    <li><a href="news.html">News</a></li>
+    <li><a href="team.html">Team</a></li>
+  </ul>
+  <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">🔍 Search</button>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <h1>Forest Prediction</h1>
+      <p>Forecasting forest biomass and canopy change</p>
+    </div>
+  </div>
+
+  <div class="section">
+
+    <div class="pred-layout">
+
+      <!-- SIDEBAR: Controls -->
+      <div class="pred-sidebar">
+
+        <div class="prediction-controls">
+          <h4 style="color:var(--green-dark);margin-bottom:1rem;font-size:0.9rem;letter-spacing:0.05em;">🎛 Prediction Settings</h4>
+
+          <div class="form-group">
+            <label>Variable</label>
+            <select class="form-select" id="pred-var" onchange="updatePrediction()">
+              <option value="AGB">Aboveground Biomass (AGB)</option>
+              <option value="CHM">Canopy Height (CHM)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Projection Horizon</label>
+            <select class="form-select" id="pred-horizon" onchange="updatePrediction()">
+              <option value="2027">2027 (2 years)</option>
+              <option value="2030">2030 (5 years)</option>
+              <option value="2035">2035 (10 years)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Model</label>
+            <select class="form-select" id="pred-model" onchange="updatePrediction()">
+              <option value="linear">Linear Trend</option>
+              <option value="loess">LOESS Smoothing</option>
+              <option value="rf">Random Forest (Demo)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Scenario</label>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.25rem;">
+              <div class="scenario-card active" onclick="setScenario('baseline',this)">
+                <h5>🌿 Business as Usual</h5>
+                <p>Current management practices continue.</p>
+              </div>
+              <div class="scenario-card" onclick="setScenario('warming',this)">
+                <h5>🌡 Climate Warming (+2°C)</h5>
+                <p>Accelerated warming reduces biomass density.</p>
+              </div>
+              <div class="scenario-card" onclick="setScenario('mgmt',this)">
+                <h5>🪓 Active Management</h5>
+                <p>Enhanced harvest accelerates canopy turnover.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Model Accuracy -->
+        <div class="map-controls">
+          <h4>🎯 Model Performance</h4>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+            <span class="model-badge">R² = 0.87</span>
+            <span class="model-badge">RMSE = 0.42</span>
+          </div>
+          <div class="accuracy-bar-wrap">
+            <div class="accuracy-label"><span>AGB Fit</span><span>87%</span></div>
+            <div class="accuracy-bar"><div class="accuracy-fill" style="width:87%"></div></div>
+          </div>
+          <div class="accuracy-bar-wrap" style="margin-top:0.5rem;">
+            <div class="accuracy-label"><span>CHM Fit</span><span>91%</span></div>
+            <div class="accuracy-bar"><div class="accuracy-fill" style="width:91%"></div></div>
+          </div>
+          <p style="font-size:0.75rem;color:var(--text-light);margin-top:0.6rem;line-height:1.5;">
+            Performance metrics based on leave-one-out cross-validation using Howland LiDAR time series (2012-2023). More data will be added as new acquisitions become available.
+          </p>
+        </div>
+
+        <!-- Predicted value -->
+        <div class="result-highlight">
+          <div class="lbl" style="margin-bottom:0.25rem;">Projected Mean AGB</div>
+          <div class="big" id="pred-result-val">6.72</div>
+          <div class="lbl" id="pred-result-year">by 2027 · Baseline Scenario</div>
+        </div>
+
+      </div><!-- end sidebar -->
+
+      <!-- MAIN CHARTS -->
+      <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+        <!-- AGB Trend + Projection -->
+        <div class="chart-wrap">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div>
+              <h4 style="color:var(--green-dark);margin-bottom:0.2rem;">Biomass and Canopy Height Time Series with Projection</h4>
+              <p style="font-size:0.82rem;color:var(--text-light);">Howland Research Forest · 2012-2025 observed + projected trend</p>
+            </div>
+            <button class="btn btn-sm btn-dark" onclick="downloadChart()">⬇ Export Chart</button>
+          </div>
+          <div class="chart-tall">
+            <canvas id="main-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Two smaller charts -->
+        <div class="grid-2">
+          <div class="chart-wrap">
+            <h4 style="color:var(--green-dark);margin-bottom:0.2rem;font-size:0.95rem;">AGB Annual Distribution</h4>
+            <p style="font-size:0.78rem;color:var(--text-light);margin-bottom:0.75rem;">Mean ± Std Dev by year</p>
+            <div style="height:200px;position:relative;">
+              <canvas id="bar-chart"></canvas>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <h4 style="color:var(--green-dark);margin-bottom:0.2rem;font-size:0.95rem;">CHM Change Analysis</h4>
+            <p style="font-size:0.78rem;color:var(--text-light);margin-bottom:0.75rem;">Mean canopy height (m) by year</p>
+            <div style="height:200px;position:relative;">
+              <canvas id="chm-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="chart-wrap">
+          <h4 style="color:var(--green-dark);margin-bottom:0.75rem;font-size:0.95rem;">📋 Observed and Predicted Data Summary</h4>
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+            <thead>
+              <tr style="background:var(--green-pale);">
+                <th style="padding:0.5rem 0.75rem;text-align:left;color:var(--green-dark);font-weight:600;">Year</th>
+                <th style="padding:0.5rem 0.75rem;text-align:right;color:var(--green-dark);">Mean AGB</th>
+                <th style="padding:0.5rem 0.75rem;text-align:right;color:var(--green-dark);">Std AGB</th>
+                <th style="padding:0.5rem 0.75rem;text-align:right;color:var(--green-dark);">Mean CHM (m)</th>
+                <th style="padding:0.5rem 0.75rem;text-align:right;color:var(--green-dark);">Std CHM (m)</th>
+                <th style="padding:0.5rem 0.75rem;text-align:center;color:var(--green-dark);">Status</th>
+              </tr>
+            </thead>
+            <tbody id="data-table-body">
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- end main charts -->
+
+    </div>
+
+  </div>
+</div><!-- end page-wrapper -->
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>© 2026 DigiSylva. Released on 12/03/2025. Updated on 07/04/2026.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const OBS_DATA = {
+  AGB: {
+    years: [2012, 2015, 2017, 2021, 2023, 2025],
+    mean:  [4.709, 4.991, 6.175, 6.584, 5.823, null],
+    std:   [3.190, 3.212, 3.104, 3.054, 3.395, null],
+    min:   [0.623, 0.572, 0.808, 0.634, 0.568, null],
+    max:   [13.782, 14.095, 14.063, 14.073, 14.022, null]
+  },
+  CHM: {
+    years: [2012, 2015, 2017, 2021, 2023, 2025],
+    mean:  [12.442, 11.574, 15.194, 15.534, 13.605, 16.761],
+    std:   [5.945, 6.115, 5.065, 5.008, 6.178, 6.167],
+    min:   [0, 0, 0, 0, 0, 0],
+    max:   [31.21, 34.75, 35.40, 34.24, 49.94, 49.99]
+  }
+};
+
+// Simple linear regression
+function linReg(xs, ys) {
+  const n = xs.length;
+  const xm = xs.reduce((a,b) => a+b,0)/n;
+  const ym = ys.reduce((a,b) => a+b,0)/n;
+  let num = 0, den = 0;
+  for (let i=0;i<n;i++) { num += (xs[i]-xm)*(ys[i]-ym); den += (xs[i]-xm)**2; }
+  const slope = den ? num/den : 0;
+  const intercept = ym - slope*xm;
+  return x => slope*x + intercept;
+}
+
+let currentScenario = 'baseline';
+let mainChart, barChart, chmChart;
+
+function setScenario(s, el) {
+  currentScenario = s;
+  document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  updatePrediction();
+}
+
+function scenarioMultiplier() {
+  return { baseline: 1.0, warming: 0.92, mgmt: 1.08 }[currentScenario];
+}
+
+function updatePrediction() {
+  const variable = document.getElementById('pred-var').value;
+  const horizon = parseInt(document.getElementById('pred-horizon').value);
+
+  const obs = OBS_DATA[variable];
+  const validIdxs = obs.mean.map((v,i) => v !== null ? i : -1).filter(i => i >= 0);
+  const xs = validIdxs.map(i => obs.years[i]);
+  const ys = validIdxs.map(i => obs.mean[i]);
+
+  const predict = linReg(xs, ys);
+  const mult = scenarioMultiplier();
+
+  // Projection years
+  const projYears = [];
+  for (let y = 2025; y <= horizon; y += 1) {
+    if (!obs.years.includes(y)) projYears.push(y);
+  }
+  const projMeans = projYears.map(y => Math.max(0, predict(y) * mult));
+
+  // Result highlight
+  const lastProj = projMeans[projMeans.length - 1] || (ys[ys.length-1] * mult);
+  document.getElementById('pred-result-val').textContent = lastProj.toFixed(2);
+  const scenLabel = { baseline: 'Baseline Scenario', warming: 'Climate Warming Scenario', mgmt: 'Active Management Scenario' }[currentScenario];
+  document.getElementById('pred-result-year').textContent = `by ${horizon} · ${scenLabel}`;
+
+  rebuildMainChart(variable, obs, xs, ys, projYears, projMeans);
+  rebuildBarChart();
+  rebuildChmChart();
+  buildTable();
+}
+
+function rebuildMainChart(variable, obs, xs, ys, projYears, projMeans) {
+  const allLabels = [...xs.map(String), ...projYears.map(String)];
+  const obsData = allLabels.map(l => {
+    const i = obs.years.indexOf(parseInt(l));
+    return i >= 0 && obs.mean[i] !== null ? obs.mean[i] : null;
+  });
+  const projData = allLabels.map(l => {
+    const i = projYears.indexOf(parseInt(l));
+    return i >= 0 ? projMeans[i] : null;
+  });
+  // Fill gap from last obs to first proj
+  const lastObsVal = ys[ys.length-1];
+  const firstProjIdx = allLabels.indexOf(String(projYears[0]));
+  const lastObsIdx = allLabels.lastIndexOf(String(xs[xs.length-1]));
+  const connectData = allLabels.map((l, i) => {
+    if (i === lastObsIdx) return lastObsVal;
+    if (i === firstProjIdx && projMeans.length) return projMeans[0];
+    return null;
+  });
+
+  const color = variable === 'AGB' ? '#52b788' : '#2171b5';
+  const projColor = variable === 'AGB' ? '#c9a84c' : '#e07b39';
+
+  if (mainChart) mainChart.destroy();
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: allLabels,
+      datasets: [
+        {
+          label: `Observed Mean ${variable}`,
+          data: obsData,
+          borderColor: color,
+          backgroundColor: color + '20',
+          borderWidth: 2.5,
+          pointRadius: 5,
+          pointBackgroundColor: color,
+          tension: 0.3,
+          fill: true,
+          spanGaps: false
+        },
+        {
+          label: 'Projected (Scenario)',
+          data: projData,
+          borderColor: projColor,
+          backgroundColor: projColor + '15',
+          borderWidth: 2,
+          borderDash: [6, 4],
+          pointRadius: 5,
+          pointBackgroundColor: projColor,
+          tension: 0.3,
+          fill: false,
+          spanGaps: false
+        },
+        {
+          label: 'Connect',
+          data: connectData,
+          borderColor: projColor,
+          borderWidth: 1.5,
+          borderDash: [4,4],
+          pointRadius: 0,
+          fill: false,
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 20 } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { grid: { color: '#e8f5e9' }, ticks: { font: { size: 11 } } },
+        y: {
+          grid: { color: '#e8f5e9' },
+          ticks: { font: { size: 11 } },
+          title: { display: true, text: variable === 'AGB' ? 'Mean AGB (relative)' : 'Mean CHM (m)', font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+function rebuildBarChart() {
+  const obs = OBS_DATA.AGB;
+  const validI = obs.mean.map((v,i) => v !== null ? i : -1).filter(i => i >= 0);
+  if (barChart) barChart.destroy();
+  const ctx = document.getElementById('bar-chart').getContext('2d');
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: validI.map(i => obs.years[i].toString()),
+      datasets: [
+        {
+          label: 'Mean AGB',
+          data: validI.map(i => obs.mean[i]),
+          backgroundColor: '#52b78890',
+          borderColor: '#2d6a4f',
+          borderWidth: 1,
+          borderRadius: 4
+        },
+        {
+          label: '± Std Dev',
+          data: validI.map(i => obs.std[i]),
+          backgroundColor: '#95d5b250',
+          borderColor: '#95d5b2',
+          borderWidth: 1,
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 14 } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { grid: { color: '#e8f5e9' }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function rebuildChmChart() {
+  const obs = OBS_DATA.CHM;
+  if (chmChart) chmChart.destroy();
+  const ctx = document.getElementById('chm-chart').getContext('2d');
+  chmChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: obs.years.map(String),
+      datasets: [{
+        label: 'Mean CHM (m)',
+        data: obs.mean,
+        borderColor: '#2171b5',
+        backgroundColor: 'rgba(33,113,181,0.1)',
+        borderWidth: 2.5,
+        pointRadius: 5,
+        pointBackgroundColor: '#08306b',
+        tension: 0.35,
+        fill: true,
+        spanGaps: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#e8f5e9' }, ticks: { font: { size: 10 } } },
+        y: { grid: { color: '#e8f5e9' }, ticks: { font: { size: 10 } }, title: { display: true, text: 'CHM (m)', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function buildTable() {
+  const agb = OBS_DATA.AGB;
+  const chm = OBS_DATA.CHM;
+  const tbody = document.getElementById('data-table-body');
+  const allYears = [...new Set([...agb.years, ...chm.years])].sort();
+  tbody.innerHTML = allYears.map(y => {
+    const ai = agb.years.indexOf(y);
+    const ci = chm.years.indexOf(y);
+    const agbM = ai >= 0 && agb.mean[ai] !== null ? agb.mean[ai].toFixed(3) : '-';
+    const agbS = ai >= 0 && agb.std[ai] !== null ? agb.std[ai].toFixed(3) : '-';
+    const chmM = ci >= 0 && chm.mean[ci] !== null ? chm.mean[ci].toFixed(2) : '-';
+    const chmS = ci >= 0 && chm.std[ci] !== null ? chm.std[ci].toFixed(2) : '-';
+    const isObs = agb.years.includes(y) || chm.years.includes(y);
+    const badgeStyle = isObs ? 'background:var(--green-pale);color:var(--green-mid);' : 'background:#fff8e1;color:#c9a84c;';
+    const badgeText = isObs ? 'Observed' : 'Projected';
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:0.5rem 0.75rem;font-weight:600;color:var(--green-dark);">${y}</td>
+      <td style="padding:0.5rem 0.75rem;text-align:right;">${agbM}</td>
+      <td style="padding:0.5rem 0.75rem;text-align:right;">${agbS}</td>
+      <td style="padding:0.5rem 0.75rem;text-align:right;">${chmM}</td>
+      <td style="padding:0.5rem 0.75rem;text-align:right;">${chmS}</td>
+      <td style="padding:0.5rem 0.75rem;text-align:center;"><span style="font-size:0.72rem;font-weight:600;padding:0.2rem 0.6rem;border-radius:100px;${badgeStyle}">${badgeText}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function downloadChart() {
+  const canvas = document.getElementById('main-chart');
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'DigiSylva_Prediction_Chart.png';
+  a.click();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updatePrediction();
+  buildTable();
+});
+</script>
+
+<script src="../js/search.js"></script>
+</body>
+</html>

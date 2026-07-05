@@ -9,17 +9,27 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    .fh-wrap { max-width: 1100px; margin: 0 auto; }
+    .section { max-width: none; }
+    .fh-wrap { max-width: none; margin: 0 auto; }
     .demo-note {
       background: #fff8e1; border: 1px solid #ffe082; color: #795548;
       border-radius: var(--radius-md); padding: 0.8rem 1.1rem; font-size: 0.82rem; margin-bottom: 1.5rem;
     }
-    .fh-intro { font-size: 0.98rem; color: var(--text-mid); line-height: 1.75; max-width: 800px; margin-bottom: 1.75rem; }
+    .fh-intro { font-size: 0.98rem; color: var(--text-mid); line-height: 1.75; max-width: 900px; margin-bottom: 1.6rem; }
 
-    .fh-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.75rem; }
+    .fh-tabs { display: flex; gap: 0.4rem; border-bottom: 2px solid var(--border); margin-bottom: 1.6rem; }
+    .fh-tab {
+      background: none; border: none; padding: 0.7rem 1.3rem; font-family: 'Inter', sans-serif;
+      font-size: 0.95rem; font-weight: 600; color: var(--text-light); cursor: pointer;
+      border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .15s, border-color .15s;
+    }
+    .fh-tab:hover { color: var(--green-mid); }
+    .fh-tab.active { color: var(--green-dark); border-bottom-color: var(--green-bright); }
+
+    .fh-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.6rem; }
     .fh-stat { background: white; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.1rem 1.25rem; box-shadow: var(--shadow-sm); }
     .fh-stat .lbl { font-size: 0.72rem; letter-spacing: 0.05em; color: var(--text-light); }
-    .fh-stat .val { font-size: 1.55rem; font-weight: 700; color: var(--green-dark); font-family: 'Playfair Display', serif; margin-top: 0.15rem; }
+    .fh-stat .val { font-size: 1.5rem; font-weight: 700; color: var(--green-dark); font-family: 'Playfair Display', serif; margin-top: 0.15rem; }
     .fh-stat .val.warn { color: #d84315; }
     .fh-stat .sub { font-size: 0.75rem; color: var(--text-light); margin-top: 0.1rem; }
 
@@ -27,13 +37,68 @@
     .card-box h3 { color: var(--green-dark); font-family: 'Inter', sans-serif; font-size: 1.05rem; margin: 0 0 0.2rem; }
     .card-box .csub { font-size: 0.8rem; color: var(--text-light); margin-bottom: 1rem; }
 
-    .fh-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; align-items: start; margin-bottom: 1.5rem; }
+    .fh-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 1.5rem; align-items: start; margin-bottom: 1.5rem; }
     .fh-col { display: flex; flex-direction: column; gap: 1.5rem; }
 
-    #fh-map { height: 400px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
-    .risk-legend { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-mid); }
-    .risk-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
-    .risk-legend .d { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
+    /* ---- Fancy interactive map ---- */
+    .map-shell { position: relative; }
+    .fh-map { height: 540px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; z-index: 1; }
+    .leaflet-interactive { transition: fill .35s ease, fill-opacity .35s ease, stroke-opacity .35s ease; }
+
+    .map-overlay {
+      position: absolute; z-index: 500;
+      background: rgba(255,255,255,0.93); backdrop-filter: blur(9px);
+      border: 1px solid rgba(0,0,0,0.08); border-radius: 13px; box-shadow: 0 8px 26px rgba(0,0,0,0.16);
+    }
+    .map-panel { top: 12px; right: 12px; width: 234px; padding: 0.9rem 1rem; }
+    .map-panel h5 { margin: 0 0 0.15rem; font-size: 0.82rem; color: var(--green-dark); font-family: 'Inter', sans-serif; }
+    .mp-yearline { display: flex; align-items: baseline; justify-content: space-between; margin-top: 0.35rem; }
+    .mp-year { font-size: 1.35rem; font-weight: 700; font-family: 'Playfair Display', serif; color: var(--green-dark); }
+    .mp-slider { width: 100%; margin: 0.35rem 0 0.2rem; accent-color: var(--green-mid); }
+    .mp-ends { display: flex; justify-content: space-between; font-size: 0.66rem; color: var(--text-light); }
+    .mp-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
+    .mp-play {
+      display: inline-flex; align-items: center; gap: 0.35rem; border: none; cursor: pointer;
+      background: var(--green-mid); color: #fff; font-weight: 600; font-size: 0.78rem;
+      padding: 0.35rem 0.7rem; border-radius: 8px;
+    }
+    .mp-play:hover { background: var(--green-dark); }
+    .mp-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); margin: 0.85rem 0 0.35rem; }
+    .lv-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .lv-chip {
+      display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.6rem;
+      border-radius: 100px; border: 1px solid var(--border); font-size: 0.74rem; font-weight: 600;
+      cursor: pointer; user-select: none; color: var(--text-mid); background: #fff;
+    }
+    .lv-chip .sw { width: 11px; height: 11px; border-radius: 3px; }
+    .lv-chip.off { opacity: 0.4; text-decoration: line-through; }
+    .mp-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: var(--text-mid); margin-top: 0.85rem; cursor: pointer; }
+    .mp-toggle input { accent-color: var(--green-mid); }
+
+    .map-legend { left: 12px; bottom: 20px; padding: 0.7rem 0.9rem; }
+    .map-legend .lg-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); margin-bottom: 0.35rem; }
+    .lg-row { display: flex; align-items: center; gap: 0.55rem; margin: 0.25rem 0; font-size: 0.8rem; color: var(--text-mid); min-width: 150px; }
+    .lg-row .sw { width: 13px; height: 13px; border-radius: 3px; }
+    .lg-row .lg-count { margin-left: auto; font-weight: 700; color: var(--text-dark); }
+    .lg-row .mk { font-size: 0.95rem; }
+
+    .map-detail { left: 12px; top: 12px; width: 216px; padding: 0.85rem 0.95rem; display: none; }
+    .map-detail .md-name { font-weight: 700; color: var(--green-dark); font-size: 0.95rem; }
+    .map-detail .md-line { font-size: 0.78rem; color: var(--text-mid); margin-top: 0.3rem; }
+    .map-detail .md-badge { display: inline-block; font-size: 0.72rem; font-weight: 700; color: #fff; padding: 0.1rem 0.5rem; border-radius: 100px; margin-top: 0.15rem; }
+    .map-detail .md-close { float: right; cursor: pointer; color: var(--text-light); font-size: 0.9rem; line-height: 1; }
+
+    /* pulsing hotspot marker */
+    .pulse-wrap { position: relative; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; }
+    .pulse-core { font-size: 16px; line-height: 16px; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
+    .pulse-ring { position: absolute; inset: 4px; border-radius: 50%; background: var(--pc); opacity: 0.45; animation: fhpulse 1.9s ease-out infinite; }
+    @keyframes fhpulse { 0% { transform: scale(0.55); opacity: 0.55; } 100% { transform: scale(2.2); opacity: 0; } }
+
+    .pred-card { background: linear-gradient(135deg, var(--green-dark), var(--green-mid)); color: #fff; border-radius: var(--radius-md); padding: 1.35rem 1.5rem; box-shadow: var(--shadow-sm); }
+    .pred-card h3 { color: #fff; font-family: 'Inter', sans-serif; font-size: 1.02rem; margin: 0 0 0.2rem; }
+    .pred-card .psub { font-size: 0.78rem; color: rgba(255,255,255,0.72); margin-bottom: 0.85rem; }
+    .pred-card ul { margin: 0; padding-left: 1.1rem; }
+    .pred-card li { font-size: 0.85rem; line-height: 1.7; color: rgba(255,255,255,0.92); }
 
     .host-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem; }
     .host-tag { background: var(--green-pale); color: var(--green-mid); font-size: 0.82rem; font-weight: 600; padding: 0.3rem 0.85rem; border-radius: 100px; }
@@ -41,7 +106,11 @@
     .fh-list { margin: 0.2rem 0 0 1.1rem; padding: 0; }
     .fh-list li { font-size: 0.92rem; color: var(--text-mid); line-height: 1.85; }
     .leaflet-popup-content { font-size: 0.82rem; line-height: 1.5; }
-    @media (max-width: 860px) { .fh-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) {
+      .fh-grid { grid-template-columns: 1fr; }
+      .map-panel { width: 200px; }
+      .map-detail { display: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -54,10 +123,10 @@
   </a>
   <ul class="nav-links">
     <li><a href="../index.html">Home</a></li>
-    <li><a href="naip.html">Forest Explorer</a></li>
+    <li><a href="forest-explorer.html">Forest Explorer</a></li>
     <li><a href="forest-inventory.html">Forest Inventory</a></li>
-    <li><a href="map.html">Forest Map</a></li>
-    <li><a href="prediction.html">Forest Prediction</a></li>
+    <li><a href="forest-map.html">Forest Map</a></li>
+    <li><a href="forest-prediction.html">Forest Prediction</a></li>
     <li><a href="forest-health.html" class="active">Forest Health</a></li>
     <li><a href="forest-tools.html">Forest Tools</a></li>
     <li><a href="ai-advisor.html">AI Advisor</a></li>
@@ -73,65 +142,146 @@
   <div class="page-header">
     <div>
       <h1>Forest Health</h1>
-      <p>Spruce budworm monitoring and outlook</p>
+      <p>Forest Health monitoring and prediction</p>
     </div>
   </div>
 
   <div class="section">
     <div class="fh-wrap">
 
-      <div class="demo-note">⚠ Illustrative demonstration data - the spruce budworm figures below are sample values for interface preview only and are not based on field surveys.</div>
+      <div class="demo-note">⚠ Illustrative demonstration data</div>
 
-      <p class="fh-intro">
-        The eastern spruce budworm (<em>Choristoneura fumiferana</em>) is the most damaging defoliating insect of spruce-fir forests in the Northeast. Larvae feed on the new foliage of balsam fir and spruce, and sustained outbreaks can cause widespread growth loss and mortality. DigiSylva combines field plots with repeat LiDAR to track the canopy change that may signal budworm defoliation.
-      </p>
-
-      <div class="fh-stats">
-        <div class="fh-stat"><div class="lbl">REGIONAL RISK</div><div class="val warn">Moderate-High</div><div class="sub">current season</div></div>
-        <div class="fh-stat"><div class="lbl">PLOTS WITH DEFOLIATION</div><div class="val">23 / 188</div><div class="sub">12% of monitored plots</div></div>
-        <div class="fh-stat"><div class="lbl">MEAN DEFOLIATION</div><div class="val">18%</div><div class="sub">of new-growth foliage</div></div>
-        <div class="fh-stat"><div class="lbl">5-YEAR TREND</div><div class="val warn">Rising</div><div class="sub">since 2022</div></div>
+      <div class="fh-tabs">
+        <button class="fh-tab active" data-tab="insect">Maine Insect</button>
+        <button class="fh-tab" data-tab="drought">Maine Drought</button>
       </div>
 
-      <div class="fh-grid">
-        <div class="card-box">
-          <h3>Budworm risk map</h3>
-          <div class="csub">Current-season outbreak risk by monitoring site. Click a site for details.</div>
-          <div id="fh-map"></div>
-          <div class="risk-legend">
-            <span><span class="d" style="background:#2e7d32"></span>Low</span>
-            <span><span class="d" style="background:#ef9a00"></span>Moderate</span>
-            <span><span class="d" style="background:#d84315"></span>High</span>
-            <span><span class="d" style="background:#b71c1c"></span>Severe</span>
-          </div>
+      <!-- ============ INSECT PANEL ============ -->
+      <div class="fh-panel" id="panel-insect">
+        <p class="fh-intro">
+          The eastern spruce budworm (<em>Choristoneura fumiferana</em>) is the most damaging defoliating insect of Maine's spruce-fir forests. Drag the <b>year slider</b> or press <b>Play</b> to watch projected risk shift by town, filter risk levels, switch basemaps, and click any town or 🌲 red-spruce hotspot for details.
+        </p>
+
+        <div class="fh-stats">
+          <div class="fh-stat"><div class="lbl">REGIONAL RISK</div><div class="val warn">Moderate-High</div><div class="sub">current season</div></div>
+          <div class="fh-stat"><div class="lbl">TOWNS AT HIGH RISK</div><div class="val" id="insect-highstat">-</div><div class="sub" id="insect-highsub">for selected year</div></div>
+          <div class="fh-stat"><div class="lbl">RED SPRUCE HOTSPOTS</div><div class="val">5</div><div class="sub">priority stands</div></div>
+          <div class="fh-stat"><div class="lbl">5-YEAR TREND</div><div class="val warn">Rising</div><div class="sub">since 2022</div></div>
         </div>
 
-        <div class="fh-col">
+        <div class="fh-grid">
           <div class="card-box">
-            <h3>Defoliation trend</h3>
-            <div class="csub">Mean current-year defoliation across plots (sample data).</div>
-            <div style="position:relative;height:220px;"><canvas id="defoliation-chart"></canvas></div>
+            <h3>Budworm risk by town</h3>
+            <div class="csub">Interactive risk map. Use the panel to change year, filter levels, and toggle hotspots.</div>
+            <div class="map-shell">
+              <div class="fh-map" id="insect-map"></div>
+              <div class="map-overlay map-panel" id="insect-controls"></div>
+              <div class="map-overlay map-legend" id="insect-legend"></div>
+              <div class="map-overlay map-detail" id="insect-detail"></div>
+            </div>
           </div>
-          <div class="card-box">
-            <h3>Host species at risk</h3>
-            <div class="host-tags">
-              <span class="host-tag">Balsam fir</span>
-              <span class="host-tag">Red spruce</span>
-              <span class="host-tag">White spruce</span>
-              <span class="host-tag">Black spruce</span>
+
+          <div class="fh-col">
+            <div class="pred-card">
+              <h3>2027-2030 outlook</h3>
+              <div class="psub">Model-based projection (demonstration)</div>
+              <ul>
+                <li>Northern Aroostook towns projected to stay High as the outbreak front advances south.</li>
+                <li>Several central towns expected to reach High risk by 2029 under current trends.</li>
+                <li>Red spruce and balsam fir above ~600 m flagged for top-kill risk and priority sampling.</li>
+                <li>Modeled regional defoliation rising steadily (see projected trend).</li>
+              </ul>
+            </div>
+            <div class="card-box">
+              <h3>Projected defoliation</h3>
+              <div class="csub">Mean defoliation (%), observed then projected.</div>
+              <div style="position:relative;height:180px;"><canvas id="insect-chart"></canvas></div>
+            </div>
+            <div class="card-box">
+              <h3>Host species at risk</h3>
+              <div class="host-tags">
+                <span class="host-tag">Balsam fir</span>
+                <span class="host-tag">Red spruce</span>
+                <span class="host-tag">White spruce</span>
+                <span class="host-tag">Black spruce</span>
+              </div>
             </div>
           </div>
         </div>
+
+        <div class="card-box">
+          <h3>Outlook and recommended actions</h3>
+          <ul class="fh-list">
+            <li>Continue annual overwintering larval (L2) sampling at high- and moderate-risk towns ahead of the spring feeding period.</li>
+            <li>Prioritize repeat LiDAR and canopy-change analysis in fir-dominated stands most vulnerable to top-kill.</li>
+            <li>Flag towns with consecutive years of rising defoliation for ground verification.</li>
+            <li>Favor thinning that reduces fir dominance and increases diversity to lower outbreak susceptibility.</li>
+          </ul>
+        </div>
       </div>
 
-      <div class="card-box">
-        <h3>Outlook and recommended actions</h3>
-        <ul class="fh-list">
-          <li>Continue annual overwintering larval (L2) sampling at high- and moderate-risk sites ahead of the spring feeding period.</li>
-          <li>Prioritize repeat LiDAR and canopy-change analysis in stands with more than 40% balsam fir, which are most vulnerable to top-kill.</li>
-          <li>Flag plots with two or more consecutive years of rising defoliation for ground verification.</li>
-          <li>Where management is planned, favor thinning that reduces fir dominance and increases stand diversity to lower outbreak susceptibility.</li>
-        </ul>
+      <!-- ============ DROUGHT PANEL ============ -->
+      <div class="fh-panel" id="panel-drought" style="display:none;">
+        <p class="fh-intro">
+          Drought stresses Maine forests through reduced growth, crown dieback, and greater vulnerability to pests. Drag the <b>year slider</b> or press <b>Play</b> to watch projected severity shift by town, filter levels, switch basemaps, and click any town or 💧 drought-stress hotspot for details.
+        </p>
+
+        <div class="fh-stats">
+          <div class="fh-stat"><div class="lbl">REGIONAL CONDITION</div><div class="val warn">Moderate</div><div class="sub">current season</div></div>
+          <div class="fh-stat"><div class="lbl">SEVERE-DROUGHT TOWNS</div><div class="val" id="drought-highstat">-</div><div class="sub">for selected year</div></div>
+          <div class="fh-stat"><div class="lbl">DROUGHT-STRESS HOTSPOTS</div><div class="val">4</div><div class="sub">sensitive stands</div></div>
+          <div class="fh-stat"><div class="lbl">SEASONAL OUTLOOK</div><div class="val warn">Drying</div><div class="sub">below-normal rain</div></div>
+        </div>
+
+        <div class="fh-grid">
+          <div class="card-box">
+            <h3>Drought severity by town</h3>
+            <div class="csub">Interactive severity map. Use the panel to change year, filter levels, and toggle hotspots.</div>
+            <div class="map-shell">
+              <div class="fh-map" id="drought-map"></div>
+              <div class="map-overlay map-panel" id="drought-controls"></div>
+              <div class="map-overlay map-legend" id="drought-legend"></div>
+              <div class="map-overlay map-detail" id="drought-detail"></div>
+            </div>
+          </div>
+
+          <div class="fh-col">
+            <div class="pred-card">
+              <h3>2027-2030 outlook</h3>
+              <div class="psub">Model-based projection (demonstration)</div>
+              <ul>
+                <li>Southern and coastal towns projected to stay moderate-severe through late summer.</li>
+                <li>Sandy outwash and shallow-till stands flagged for elevated moisture stress.</li>
+                <li>Below-normal precipitation expected; drought footprint likely to expand northward.</li>
+                <li>Modeled drought index trending upward (see projected trend).</li>
+              </ul>
+            </div>
+            <div class="card-box">
+              <h3>Projected drought index</h3>
+              <div class="csub">Drought index (0-5), observed then projected.</div>
+              <div style="position:relative;height:180px;"><canvas id="drought-chart"></canvas></div>
+            </div>
+            <div class="card-box">
+              <h3>Most sensitive site types</h3>
+              <div class="host-tags">
+                <span class="host-tag">Sandy outwash</span>
+                <span class="host-tag">Shallow till</span>
+                <span class="host-tag">Ledge / thin soil</span>
+                <span class="host-tag">South-facing slopes</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-box">
+          <h3>Outlook and recommended actions</h3>
+          <ul class="fh-list">
+            <li>Track soil-moisture and stream-flow anomalies through the growing season at moderate- and severe-drought towns.</li>
+            <li>Prioritize repeat LiDAR canopy-change analysis on sandy outwash and shallow-soil stands most prone to dieback.</li>
+            <li>Flag regeneration and recently thinned stands, which are most exposed during extended dry spells.</li>
+            <li>Where management is planned, retain shade and favor drought-tolerant species mixes on droughty sites.</li>
+          </ul>
+        </div>
       </div>
 
     </div>
@@ -147,43 +297,270 @@
 </footer>
 
 <script>
-// ---- Interactive risk map (illustrative sample data) ----
-const RISK_COLORS = { Low: '#2e7d32', Moderate: '#ef9a00', High: '#d84315', Severe: '#b71c1c' };
-const SITES = [
-  { name: 'Howland Research Forest', lat: 45.204, lon: -68.740, risk: 'Moderate', defol: 16 },
-  { name: 'Penobscot Experimental Forest', lat: 44.847, lon: -68.628, risk: 'High', defol: 27 },
-  { name: 'Demeritt Forest', lat: 44.926, lon: -68.672, risk: 'Low', defol: 6 },
-  { name: 'Schoodic Forest', lat: 44.343, lon: -68.062, risk: 'Moderate', defol: 14 }
+/* ================= Illustrative demonstration data ================= */
+var RISK_COLORS = { 1: '#2e9d5f', 2: '#f4a020', 3: '#d7263d' };   // Low / Moderate / High(Severe)
+var NUM = { Low: 1, Moderate: 2, High: 3 };
+
+/* Maine towns: base level (2026) + trend flag per hazard (1 = rising) */
+var TOWNS = [
+  { name: 'Fort Kent',      lat: 47.26, lon: -68.59, insect: 3, it: 0, drought: 1, dt: 0 },
+  { name: 'Madawaska',      lat: 47.36, lon: -68.33, insect: 3, it: 0, drought: 1, dt: 0 },
+  { name: 'Allagash',       lat: 47.07, lon: -69.08, insect: 3, it: 0, drought: 1, dt: 0 },
+  { name: 'Ashland',        lat: 46.63, lon: -68.40, insect: 3, it: 0, drought: 2, dt: 0 },
+  { name: 'Presque Isle',   lat: 46.68, lon: -68.02, insect: 3, it: 0, drought: 2, dt: 0 },
+  { name: 'Houlton',        lat: 46.13, lon: -67.84, insect: 2, it: 1, drought: 2, dt: 0 },
+  { name: 'Millinocket',    lat: 45.66, lon: -68.71, insect: 3, it: 0, drought: 2, dt: 1 },
+  { name: 'Jackman',        lat: 45.63, lon: -70.25, insect: 3, it: 0, drought: 1, dt: 0 },
+  { name: 'Greenville',     lat: 45.46, lon: -69.59, insect: 2, it: 1, drought: 2, dt: 1 },
+  { name: 'Dover-Foxcroft', lat: 45.18, lon: -69.23, insect: 2, it: 1, drought: 1, dt: 1 },
+  { name: 'Lincoln',        lat: 45.36, lon: -68.51, insect: 2, it: 1, drought: 2, dt: 1 },
+  { name: 'Rangeley',       lat: 44.97, lon: -70.64, insect: 2, it: 1, drought: 1, dt: 0 },
+  { name: 'Machias',        lat: 44.72, lon: -67.46, insect: 2, it: 1, drought: 2, dt: 1 },
+  { name: 'Bangor',         lat: 44.80, lon: -68.77, insect: 1, it: 1, drought: 2, dt: 1 },
+  { name: 'Orono',          lat: 44.88, lon: -68.67, insect: 1, it: 0, drought: 1, dt: 1 },
+  { name: 'Bethel',         lat: 44.40, lon: -70.79, insect: 1, it: 0, drought: 2, dt: 1 },
+  { name: 'Farmington',     lat: 44.67, lon: -70.15, insect: 1, it: 1, drought: 2, dt: 1 },
+  { name: 'Skowhegan',      lat: 44.77, lon: -69.72, insect: 1, it: 1, drought: 2, dt: 1 },
+  { name: 'Ellsworth',      lat: 44.54, lon: -68.42, insect: 1, it: 0, drought: 2, dt: 1 },
+  { name: 'Augusta',        lat: 44.31, lon: -69.78, insect: 1, it: 0, drought: 3, dt: 0 },
+  { name: 'Waterville',     lat: 44.55, lon: -69.63, insect: 1, it: 0, drought: 3, dt: 0 },
+  { name: 'Portland',       lat: 43.66, lon: -70.26, insect: 1, it: 0, drought: 3, dt: 0 }
 ];
-const fhMap = L.map('fh-map');
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', maxZoom: 18 }).addTo(fhMap);
-const rr = { Low: 8, Moderate: 10, High: 13, Severe: 16 };
 
-SITES.forEach(s => {
-  L.circleMarker([s.lat, s.lon], { radius: rr[s.risk] || 9, color: '#fff', weight: 2, fillColor: RISK_COLORS[s.risk], fillOpacity: 0.9 })
-    .bindPopup('<strong>' + s.name + '</strong><br>Risk: <b style="color:' + RISK_COLORS[s.risk] + '">' + s.risk + '</b><br>Defoliation: ' + s.defol + '%')
-    .addTo(fhMap);
-});
-fhMap.fitBounds(L.latLngBounds(SITES.map(s => [s.lat, s.lon])).pad(0.25));
+var RED_SPRUCE = [
+  { name: 'Katahdin / Baxter red spruce stands', lat: 45.90, lon: -68.92 },
+  { name: 'Bigelow Preserve', lat: 45.15, lon: -70.28 },
+  { name: 'Mahoosuc Range', lat: 44.55, lon: -70.95 },
+  { name: 'Deboullie Public Land', lat: 46.95, lon: -68.95 },
+  { name: 'Nicatous Lake stands', lat: 45.10, lon: -68.20 }
+];
+var DROUGHT_HOTSPOTS = [
+  { name: 'Kennebunk Plains (sandy outwash)', lat: 43.40, lon: -70.55 },
+  { name: 'Waterboro Barrens', lat: 43.55, lon: -70.72 },
+  { name: 'Fryeburg outwash plain', lat: 44.02, lon: -70.98 },
+  { name: 'Alfred sand plain', lat: 43.48, lon: -70.72 }
+];
 
-// ---- Defoliation trend ----
-new Chart(document.getElementById('defoliation-chart').getContext('2d'), {
-  type: 'line',
-  data: {
-    labels: ['2018','2019','2020','2021','2022','2023','2024','2025','2026'],
-    datasets: [{
-      label: 'Mean defoliation (%)',
-      data: [4, 3, 5, 6, 7, 9, 12, 15, 18],
-      borderColor: '#d84315', backgroundColor: 'rgba(216,67,21,0.12)',
-      borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#b71c1c', tension: 0.3, fill: true
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: { x: { grid: { color: '#eef3ef' } }, y: { beginAtZero: true, grid: { color: '#eef3ef' }, title: { display: true, text: 'Defoliation (%)' } } }
+var YEAR_MIN = 2026, YEAR_MAX = 2030;
+
+function townRect(t) {
+  var dy = 0.09, dx = 0.13;
+  return [[t.lat - dy, t.lon - dx], [t.lat + dy, t.lon + dx]];
+}
+function levelAt(base, trend, year) {
+  var add = trend ? Math.round((year - YEAR_MIN) / 2) : 0;
+  var lv = base + add;
+  return lv < 1 ? 1 : (lv > 3 ? 3 : lv);
+}
+function basemaps() {
+  return {
+    'Voyager': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap, © CARTO', maxZoom: 19 }),
+    'Light': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap, © CARTO', maxZoom: 19 }),
+    'Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri', maxZoom: 19 })
+  };
+}
+
+/* ================= Map factory ================= */
+function makeHazardMap(o) {
+  var ctx = {
+    key: o.key, trendKey: o.trendKey, word: o.word, labels: o.labels,
+    hotspots: o.hotspots, hotEmoji: o.hotEmoji, hotColor: o.hotColor, hotTitle: o.hotTitle,
+    year: YEAR_MIN, levels: { 1: true, 2: true, 3: true }, showHot: true,
+    statEl: document.getElementById(o.statId),
+    detailEl: document.getElementById(o.detailId),
+    legendEl: document.getElementById(o.legendId)
+  };
+
+  var bm = basemaps();
+  var map = L.map(o.mapId, { scrollWheelZoom: true, center: [45.6, -69.0], zoom: 7, layers: [bm['Voyager']] });
+  L.control.layers(bm, null, { position: 'bottomright', collapsed: true }).addTo(map);
+  ctx.map = map;
+
+  ctx.townGroup = L.featureGroup().addTo(map);
+  ctx.hotGroup = L.featureGroup().addTo(map);
+
+  // hotspots (pulsing markers)
+  ctx.hotspots.forEach(function (h) {
+    var icon = L.divIcon({
+      className: 'fh-hot',
+      html: '<div class="pulse-wrap"><span class="pulse-ring" style="--pc:' + ctx.hotColor + '"></span><span class="pulse-core">' + ctx.hotEmoji + '</span></div>',
+      iconSize: [30, 30], iconAnchor: [15, 15]
+    });
+    L.marker([h.lat, h.lon], { icon: icon })
+      .bindPopup('<strong>' + ctx.hotTitle + '</strong><br>' + h.name)
+      .addTo(ctx.hotGroup);
+  });
+
+  buildControls(ctx, o.panelId);
+  buildLegendShell(ctx);
+  render(ctx);
+  map.fitBounds(ctx.townGroup.getBounds().pad(0.06));
+  return ctx;
+}
+
+function buildControls(ctx, panelId) {
+  var el = document.getElementById(panelId);
+  el.innerHTML =
+    '<h5>Projection year</h5>' +
+    '<div class="mp-yearline"><span class="mp-year" data-year></span>' +
+    '<button class="mp-play" data-play>▶ Play</button></div>' +
+    '<input type="range" class="mp-slider" min="' + YEAR_MIN + '" max="' + YEAR_MAX + '" step="1" value="' + ctx.year + '" data-slider>' +
+    '<div class="mp-ends"><span>' + YEAR_MIN + '</span><span>' + YEAR_MAX + '</span></div>' +
+    '<div class="mp-label">Filter risk levels</div>' +
+    '<div class="lv-chips">' +
+      chip(3, ctx) + chip(2, ctx) + chip(1, ctx) +
+    '</div>' +
+    '<label class="mp-toggle"><input type="checkbox" data-hot checked> Show hotspots</label>';
+
+  ctx.yearEl = el.querySelector('[data-year]');
+  ctx.slider = el.querySelector('[data-slider]');
+  ctx.playBtn = el.querySelector('[data-play]');
+
+  ctx.slider.addEventListener('input', function () { ctx.year = parseInt(this.value, 10); render(ctx); });
+  ctx.playBtn.addEventListener('click', function () { togglePlay(ctx); });
+  el.querySelectorAll('.lv-chip').forEach(function (c) {
+    c.addEventListener('click', function () {
+      var lv = parseInt(this.getAttribute('data-lv'), 10);
+      ctx.levels[lv] = !ctx.levels[lv];
+      this.classList.toggle('off', !ctx.levels[lv]);
+      render(ctx);
+    });
+  });
+  el.querySelector('[data-hot]').addEventListener('change', function () {
+    ctx.showHot = this.checked;
+    if (this.checked) ctx.hotGroup.addTo(ctx.map); else ctx.map.removeLayer(ctx.hotGroup);
+  });
+}
+function chip(lv, ctx) {
+  return '<span class="lv-chip" data-lv="' + lv + '"><span class="sw" style="background:' + RISK_COLORS[lv] + '"></span>' + ctx.labels[lv] + '</span>';
+}
+
+function buildLegendShell(ctx) {
+  ctx.legendEl.innerHTML =
+    '<div class="lg-title">' + ctx.word + '</div>' +
+    '<div class="lg-row"><span class="sw" style="background:' + RISK_COLORS[3] + '"></span>' + ctx.labels[3] + '<span class="lg-count" data-c="3">0</span></div>' +
+    '<div class="lg-row"><span class="sw" style="background:' + RISK_COLORS[2] + '"></span>' + ctx.labels[2] + '<span class="lg-count" data-c="2">0</span></div>' +
+    '<div class="lg-row"><span class="sw" style="background:' + RISK_COLORS[1] + '"></span>' + ctx.labels[1] + '<span class="lg-count" data-c="1">0</span></div>' +
+    '<div class="lg-row"><span class="mk">' + ctx.hotEmoji + '</span>' + ctx.hotTitle + '<span class="lg-count">' + ctx.hotspots.length + '</span></div>';
+}
+
+function togglePlay(ctx) {
+  if (ctx.timer) {
+    clearInterval(ctx.timer); ctx.timer = null; ctx.playBtn.innerHTML = '▶ Play';
+    return;
   }
-});
+  ctx.playBtn.innerHTML = '⏸ Pause';
+  if (ctx.year >= YEAR_MAX) ctx.year = YEAR_MIN;
+  ctx.timer = setInterval(function () {
+    ctx.year = ctx.year >= YEAR_MAX ? YEAR_MIN : ctx.year + 1;
+    ctx.slider.value = ctx.year;
+    render(ctx);
+    if (ctx.year >= YEAR_MAX) { clearInterval(ctx.timer); ctx.timer = null; ctx.playBtn.innerHTML = '▶ Play'; }
+  }, 1100);
+}
+
+function render(ctx) {
+  ctx.townGroup.clearLayers();
+  var counts = { 1: 0, 2: 0, 3: 0 };
+  TOWNS.forEach(function (t) {
+    var lv = levelAt(t[ctx.key], t[ctx.trendKey], ctx.year);
+    counts[lv]++;
+    if (!ctx.levels[lv]) return;
+    var rect = L.rectangle(townRect(t), {
+      color: '#ffffff', weight: 1, fillColor: RISK_COLORS[lv], fillOpacity: 0.6
+    });
+    rect.bindTooltip(t.name + ' — ' + ctx.labels[lv], { sticky: true, direction: 'top' });
+    rect.on('mouseover', function () { this.setStyle({ weight: 3, fillOpacity: 0.85 }); this.bringToFront(); });
+    rect.on('mouseout', function () { this.setStyle({ weight: 1, fillOpacity: 0.6 }); });
+    rect.on('click', function () { showDetail(ctx, t, lv); });
+    ctx.townGroup.addLayer(rect);
+  });
+
+  if (ctx.yearEl) ctx.yearEl.textContent = ctx.year;
+  for (var k = 1; k <= 3; k++) {
+    var c = ctx.legendEl.querySelector('[data-c="' + k + '"]');
+    if (c) c.textContent = counts[k];
+  }
+  if (ctx.statEl) ctx.statEl.textContent = counts[3] + ' / ' + TOWNS.length;
+}
+
+function showDetail(ctx, t, lv) {
+  var base = t[ctx.key];
+  var trendTxt = t[ctx.trendKey] ? 'Rising — projected to intensify through ' + YEAR_MAX + '.' : 'Stable over the projection window.';
+  ctx.detailEl.style.display = 'block';
+  ctx.detailEl.innerHTML =
+    '<span class="md-close" data-x>✕</span>' +
+    '<div class="md-name">' + t.name + '</div>' +
+    '<span class="md-badge" style="background:' + RISK_COLORS[lv] + '">' + ctx.labels[lv] + ' — ' + ctx.year + '</span>' +
+    '<div class="md-line"><b>' + ctx.word + ':</b> ' + ctx.labels[lv] + '</div>' +
+    '<div class="md-line"><b>Baseline (' + YEAR_MIN + '):</b> ' + ctx.labels[base] + '</div>' +
+    '<div class="md-line">' + trendTxt + '</div>';
+  ctx.detailEl.querySelector('[data-x]').addEventListener('click', function () { ctx.detailEl.style.display = 'none'; });
+}
+
+/* ================= Projection charts ================= */
+function lineChart(canvasId, obsLabels, obs, projLabels, proj, color, projColor, yTitle) {
+  var labels = obsLabels.concat(projLabels);
+  var obsData = obs.concat(projLabels.map(function () { return null; }));
+  var projData = obsLabels.map(function () { return null; }).concat(proj);
+  projData[obsLabels.length - 1] = obs[obs.length - 1];
+  return new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Observed', data: obsData, borderColor: color, backgroundColor: color + '20', borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: color, tension: 0.3, fill: true, spanGaps: false },
+        { label: 'Projected', data: projData, borderColor: projColor, borderWidth: 2, borderDash: [6, 4], pointRadius: 3, pointBackgroundColor: projColor, tension: 0.3, fill: false, spanGaps: true }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 14 } } },
+      scales: { x: { grid: { color: '#eef3ef' }, ticks: { font: { size: 10 } } },
+                y: { beginAtZero: true, grid: { color: '#eef3ef' }, ticks: { font: { size: 10 } }, title: { display: true, text: yTitle, font: { size: 10 } } } }
+    }
+  });
+}
+
+/* ================= Tabs (lazy init) ================= */
+var insectCtx = null, droughtCtx = null, insectChart = null, droughtChart = null;
+
+function activateInsect() {
+  if (!insectCtx) {
+    insectCtx = makeHazardMap({
+      mapId: 'insect-map', key: 'insect', trendKey: 'it', word: 'Budworm risk',
+      labels: { 1: 'Low', 2: 'Moderate', 3: 'High' },
+      hotspots: RED_SPRUCE, hotEmoji: '🌲', hotColor: '#1b7a43', hotTitle: 'Red spruce hotspot',
+      panelId: 'insect-controls', legendId: 'insect-legend', detailId: 'insect-detail', statId: 'insect-highstat'
+    });
+  } else { insectCtx.map.invalidateSize(); }
+  if (!insectChart) insectChart = lineChart('insect-chart',
+    ['2018','2019','2020','2021','2022','2023','2024','2025','2026'], [4,3,5,6,7,9,12,15,18],
+    ['2027','2028','2029','2030'], [21,24,27,30], '#d84315', '#b71c1c', 'Defoliation (%)');
+}
+function activateDrought() {
+  if (!droughtCtx) {
+    droughtCtx = makeHazardMap({
+      mapId: 'drought-map', key: 'drought', trendKey: 'dt', word: 'Drought severity',
+      labels: { 1: 'Low', 2: 'Moderate', 3: 'Severe' },
+      hotspots: DROUGHT_HOTSPOTS, hotEmoji: '💧', hotColor: '#0277bd', hotTitle: 'Drought-stress hotspot',
+      panelId: 'drought-controls', legendId: 'drought-legend', detailId: 'drought-detail', statId: 'drought-highstat'
+    });
+  } else { droughtCtx.map.invalidateSize(); }
+  if (!droughtChart) droughtChart = lineChart('drought-chart',
+    ['2018','2019','2020','2021','2022','2023','2024','2025','2026'], [1.2,2.0,1.5,2.4,2.1,2.8,3.0,3.3,3.5],
+    ['2027','2028','2029','2030'], [3.7,3.9,4.1,4.3], '#e07b39', '#b34700', 'Drought index');
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.fh-tab').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === tab); });
+  document.getElementById('panel-insect').style.display = tab === 'insect' ? '' : 'none';
+  document.getElementById('panel-drought').style.display = tab === 'drought' ? '' : 'none';
+  if (tab === 'insect') activateInsect(); else activateDrought();
+}
+
+document.querySelectorAll('.fh-tab').forEach(function (b) { b.addEventListener('click', function () { showTab(b.dataset.tab); }); });
+showTab('insect');
 </script>
 <script src="../js/search.js"></script>
 </body>

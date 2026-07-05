@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forest Map - DigiSylva</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Chart.js for stats -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    html, body { height: 100%; }
+    body { display: flex; flex-direction: column; padding-top: var(--nav-h); overflow: hidden; }
+    .map-page-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 1.25rem;
+      padding: 1.25rem 1.5rem;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+    }
+    .sidebar { display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; }
+    #map-container {
+      height: 100%;
+      min-height: 480px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+    }
+    .stats-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .stats-mini-item {
+      background: var(--green-pale);
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
+      text-align: center;
+    }
+    .stats-mini-item .val { font-size: 1.1rem; font-weight: 700; color: var(--green-mid); font-family: 'Playfair Display', serif; }
+    .stats-mini-item .lbl { font-size: 0.7rem; color: var(--text-light); }
+
+    .legend-gradient {
+      height: 14px;
+      border-radius: 7px;
+      margin: 0.4rem 0 0.2rem;
+    }
+    .legend-gradient.agb {
+      background: linear-gradient(to right, #ffffe5, #d9f0a3, #78c679, #31a354, #006837);
+    }
+    .legend-gradient.chm {
+      background: linear-gradient(to right, #f7fbff, #c6dbef, #6baed6, #2171b5, #08306b);
+    }
+
+    .map-toolbar {
+      padding: 0.75rem 1.5rem;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-label { font-size: 0.8rem; font-weight: 600; color: var(--text-light); letter-spacing: 0.05em; margin-right: 0.25rem; }
+
+    .info-popup {
+      background: white;
+      border-radius: 8px;
+      box-shadow: var(--shadow-md);
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+    }
+
+    .chart-mini { height: 140px; }
+
+    .no-data-notice {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: 8px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.78rem;
+      color: #795548;
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      body { display: block; overflow: auto; }
+      .map-page-layout { grid-template-columns: 1fr; height: auto; flex: none; }
+      #map-container { height: 60vh; }
+      .sidebar { order: 2; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="../index.html">
+    <img src="../assets/DigiSylva_mark.png" alt="" class="brand-mark" />
+    <span class="digisylva-logo"><span class="d-digi">Digi</span><span class="d-s">S</span><span class="d-y">y</span><span class="d-l">l</span><span class="d-v">v</span><span class="d-a">a</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="forest-explorer.html">Forest Explorer</a></li>
+    <li><a href="forest-inventory.html">Forest Inventory</a></li>
+    <li><a href="forest-map.html" class="active">Forest Map</a></li>
+    <li><a href="forest-prediction.html">Forest Prediction</a></li>
+    <li><a href="forest-health.html">Forest Health</a></li>
+    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="ai-advisor.html">AI Advisor</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li><a href="workshops.html">Workshops</a></li>
+    <li><a href="news.html">News</a></li>
+    <li><a href="team.html">Team</a></li>
+  </ul>
+  <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">🔍 Search</button>
+</nav>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1>Forest Map</h1>
+    <p>Interactive visualization of forest maps</p>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="map-toolbar">
+  <span class="toolbar-label">Site:</span>
+  <select id="site-select" class="form-select" style="width:auto;min-width:120px;" onchange="setSiteFromSelect(this.value)">
+    <option value="HL">Howland</option>
+  </select>
+  <span class="toolbar-label" style="margin-left:1rem;">Data:</span>
+  <select id="type-select" class="form-select" style="width:auto;min-width:170px;" onchange="setTypeFromSelect(this.value)">
+    <option value="AGB">Biomass (AGB)</option>
+    <option value="CHM">Canopy Height (CHM)</option>
+  </select>
+
+  <span class="toolbar-label" style="margin-left:1rem;">Year:</span>
+  <select id="year-select" class="form-select" style="width:auto;min-width:90px;" onchange="setYearFromSelect(this.value)"></select>
+
+  <div style="margin-left:auto;display:flex;gap:0.5rem;">
+    <button class="btn btn-sm btn-dark" onclick="downloadCurrentLayer('png')">⬇ PNG</button>
+    <button class="btn btn-sm btn-dark" onclick="downloadCurrentLayer('tif')" style="background:var(--green-mid);">⬇ GeoTIFF</button>
+    <button class="btn btn-sm" style="background:var(--green-pale);color:var(--green-mid);" onclick="resetView()">⌂ Reset View</button>
+  </div>
+</div>
+
+<!-- MAP LAYOUT -->
+<div class="map-page-layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Controls -->
+    <div class="map-controls">
+      <h4>🗂 Base Map</h4>
+      <div class="btn-group">
+        <button class="btn-toggle active" onclick="setBase('streets',this)">Streets</button>
+        <button class="btn-toggle" onclick="setBase('satellite',this)">Satellite</button>
+        <button class="btn-toggle" onclick="setBase('topo',this)">Topo</button>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="map-controls">
+      <h4>🎨 Legend</h4>
+      <div id="legend-section">
+        <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:0.3rem;">Aboveground Biomass (AGB)</div>
+        <div class="legend-gradient agb" id="legend-bar"></div>
+        <div class="legend-labels">
+          <span id="leg-min">Low</span>
+          <span id="leg-mid">Medium</span>
+          <span id="leg-max">High</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-light);margin-top:0.35rem;" id="leg-unit">Unit: relative scale (see metadata)</div>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-panel">
+      <h4>📊 Site Statistics</h4>
+      <div class="no-data-notice" id="no-data-notice">⚠ No valid data for this layer/year combination.</div>
+      <div class="stats-mini" id="stats-mini">
+        <div class="stats-mini-item"><div class="val" id="stat-mean">-</div><div class="lbl">Mean</div></div>
+        <div class="stats-mini-item"><div class="val" id="stat-std">-</div><div class="lbl">Std Dev</div></div>
+        <div class="stats-mini-item"><div class="val" id="stat-min">-</div><div class="lbl">Min</div></div>
+        <div class="stats-mini-item"><div class="val" id="stat-max">-</div><div class="lbl">Max</div></div>
+      </div>
+      <div style="margin-top:0.75rem;">
+        <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:0.4rem;">Active Layer</div>
+        <div style="font-size:0.85rem;font-weight:600;color:var(--green-dark);" id="active-layer-label">AGB · 2012</div>
+      </div>
+    </div>
+
+    <!-- Trend mini-chart -->
+    <div class="chart-wrap" style="padding:1rem;">
+      <h4 style="font-size:0.82rem;color:var(--green-dark);margin-bottom:0.75rem;">📈 Mean Value Trend</h4>
+      <div style="position:relative;height:130px;">
+        <canvas id="trend-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Info box -->
+    <div class="map-controls" style="font-size:0.8rem;color:var(--text-mid);line-height:1.6;">
+      <h4>ℹ Site Info</h4>
+      <p id="info-site"><strong>Site:</strong> -</p>
+      <p id="info-location" style="margin-top:0.4rem;"><strong>Location:</strong> -</p>
+      <p id="info-sensor" style="margin-top:0.4rem;"><strong>Sensor:</strong> -</p>
+      <p id="info-resolution" style="margin-top:0.4rem;"><strong>Resolution:</strong> -</p>
+      <p id="info-agb-note" style="margin-top:0.4rem;"><strong>AGB:</strong> Aboveground Biomass derived from LiDAR point cloud metrics.</p>
+      <p id="info-chm-note" style="margin-top:0.4rem;"><strong>CHM:</strong> Canopy Height Model - maximum canopy height per pixel (meters).</p>
+    </div>
+
+  </div><!-- end sidebar -->
+
+  <!-- MAP -->
+  <div id="map-container"></div>
+
+</div><!-- end map-page-layout -->
+
+<script>
+// ═══════════════════ DATA ═══════════════════
+const META = {
+  "AGB_2012":{"bounds":{"south":45.19022,"north":45.22778,"west":-68.75771,"east":-68.70647},"stats":{"mean":4.709,"std":3.190,"min":0.623,"max":13.782},"type":"AGB","year":"2012","image":"../assets/Howland_Maps/AGB_2012.png","vmin":0.57,"vmax":14.10,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "AGB_2015":{"bounds":{"south":45.19019,"north":45.22784,"west":-68.75775,"east":-68.70638},"stats":{"mean":4.991,"std":3.212,"min":0.572,"max":14.095},"type":"AGB","year":"2015","image":"../assets/Howland_Maps/AGB_2015.png","vmin":0.57,"vmax":14.10,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "AGB_2017":{"bounds":{"south":45.19026,"north":45.22780,"west":-68.75780,"east":-68.71764},"stats":{"mean":6.175,"std":3.104,"min":0.808,"max":14.063},"type":"AGB","year":"2017","image":"../assets/Howland_Maps/AGB_2017.png","vmin":0.57,"vmax":14.10,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "AGB_2021":{"bounds":{"south":45.19026,"north":45.22780,"west":-68.75776,"east":-68.71811},"stats":{"mean":6.584,"std":3.054,"min":0.634,"max":14.073},"type":"AGB","year":"2021","image":"../assets/Howland_Maps/AGB_2021.png","vmin":0.57,"vmax":14.10,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "AGB_2023":{"bounds":{"south":45.19019,"north":45.22784,"west":-68.75775,"east":-68.70638},"stats":{"mean":5.823,"std":3.395,"min":0.568,"max":14.022},"type":"AGB","year":"2023","image":"../assets/Howland_Maps/AGB_2023.png","vmin":0.57,"vmax":14.10,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "AGB_2025":{"bounds":{"south":45.19597,"north":45.21631,"west":-68.75729,"east":-68.71912},"stats":{"mean":null,"std":null,"min":null,"max":null},"type":"AGB","year":"2025","image":"../assets/Howland_Maps/AGB_2025.png","vmin":0.57,"vmax":14.10,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "CHM_2012":{"bounds":{"south":45.19025,"north":45.22782,"west":-68.75771,"east":-68.70647},"stats":{"mean":12.442,"std":5.945,"min":0.000,"max":31.210},"type":"CHM","year":"2012","image":"../assets/Howland_Maps/CHM_2012.png","vmin":0,"vmax":50,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "CHM_2015":{"bounds":{"south":45.19024,"north":45.22781,"west":-68.75771,"east":-68.70647},"stats":{"mean":11.574,"std":6.115,"min":0.000,"max":34.750},"type":"CHM","year":"2015","image":"../assets/Howland_Maps/CHM_2015.png","vmin":0,"vmax":50,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "CHM_2017":{"bounds":{"south":45.19028,"north":45.22782,"west":-68.75771,"east":-68.71768},"stats":{"mean":15.194,"std":5.065,"min":0.000,"max":35.400},"type":"CHM","year":"2017","image":"../assets/Howland_Maps/CHM_2017.png","vmin":0,"vmax":50,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "CHM_2021":{"bounds":{"south":45.19028,"north":45.22782,"west":-68.75771,"east":-68.71819},"stats":{"mean":15.534,"std":5.008,"min":0.000,"max":34.240},"type":"CHM","year":"2021","image":"../assets/Howland_Maps/CHM_2021.png","vmin":0,"vmax":50,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "CHM_2023":{"bounds":{"south":45.19024,"north":45.22781,"west":-68.75771,"east":-68.70647},"stats":{"mean":13.605,"std":6.178,"min":0.000,"max":49.940},"type":"CHM","year":"2023","image":"../assets/Howland_Maps/CHM_2023.png","vmin":0,"vmax":50,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"},
+  "CHM_2025":{"bounds":{"south":45.19602,"north":45.21632,"west":-68.75729,"east":-68.71917},"stats":{"mean":16.761,"std":6.167,"min":0.000,"max":49.987},"type":"CHM","year":"2025","image":"../assets/Howland_Maps/CHM_2025.png","vmin":0,"vmax":50,"site":"Howland Research Forest","location":"Howland, ME (45.20°N, 68.73°W)","sensor":"Airborne LiDAR","resolution":"10 m"}
+};
+
+// Derive available years dynamically from META keys
+const YEARS = [...new Set(Object.values(META).map(v => v.year))].sort();
+
+// ═══════════════════ STATE ═══════════════════
+let currentType = 'AGB';
+let currentYear = '2012';
+let currentOverlay = null;
+let currentOpacity = 0.85;
+let map, baseLayers = {}, currentBase = 'streets';
+let trendChart = null;
+
+// ═══════════════════ INIT MAP ═══════════════════
+function initMap() {
+  map = L.map('map-container', {
+    center: [45.209, -68.732],
+    zoom: 13,
+    zoomControl: true
+  });
+
+  // Base layers
+  baseLayers.streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  baseLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '© Esri - Esri, i-cubed, USDA, USGS, AEX',
+    maxZoom: 18
+  });
+
+  baseLayers.topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a>',
+    maxZoom: 17
+  });
+
+  // Add Howland site marker
+  const marker = L.circleMarker([45.209, -68.740], {
+    radius: 8, color: '#2d6a4f', fillColor: '#52b788', fillOpacity: 0.9, weight: 2
+  }).addTo(map);
+  marker.bindPopup(`<div class="info-popup"><strong>Howland Research Forest</strong><br>Howland, Maine<br>AmeriFlux Site (US-Ho1)<br>LiDAR monitoring: 2012-2025</div>`);
+
+  // Build year dropdown
+  const yearSelect = document.getElementById('year-select');
+  YEARS.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === currentYear) opt.selected = true;
+    yearSelect.appendChild(opt);
+  });
+
+  loadOverlay();
+  updateStats();
+  updateSiteInfo();
+  buildTrendChart();
+}
+
+// ═══════════════════ OVERLAY ═══════════════════
+function loadOverlay() {
+  if (currentOverlay) { map.removeLayer(currentOverlay); currentOverlay = null; }
+
+  const key = `${currentType}_${currentYear}`;
+  const item = META[key];
+  if (!item) return;
+
+  const b = item.bounds;
+  const bounds = [[b.south, b.west], [b.north, b.east]];
+
+  currentOverlay = L.imageOverlay(item.image, bounds, {
+    opacity: currentOpacity,
+    className: 'forest-overlay'
+  }).addTo(map);
+
+  document.getElementById('active-layer-label').textContent = `${currentType} · ${currentYear}`;
+}
+
+// ═══════════════════ STATS ═══════════════════
+function updateStats() {
+  const key = `${currentType}_${currentYear}`;
+  const item = META[key];
+  const stats = item ? item.stats : null;
+  const notice = document.getElementById('no-data-notice');
+
+  if (!stats || stats.mean === null || isNaN(stats.mean)) {
+    notice.style.display = 'block';
+    ['stat-mean','stat-std','stat-min','stat-max'].forEach(id => document.getElementById(id).textContent = 'N/A');
+  } else {
+    notice.style.display = 'none';
+    document.getElementById('stat-mean').textContent = stats.mean.toFixed(2);
+    document.getElementById('stat-std').textContent = stats.std.toFixed(2);
+    document.getElementById('stat-min').textContent = stats.min.toFixed(2);
+    document.getElementById('stat-max').textContent = stats.max.toFixed(2);
+  }
+
+  // Update legend
+  const isAGB = currentType === 'AGB';
+  document.getElementById('legend-bar').className = `legend-gradient ${isAGB ? 'agb' : 'chm'}`;
+  document.getElementById('leg-min').textContent = isAGB ? '~0.6' : '0 m';
+  document.getElementById('leg-mid').textContent = isAGB ? '~7.0' : '25 m';
+  document.getElementById('leg-max').textContent = isAGB ? '~14' : '50 m';
+  document.querySelector('#legend-section div').textContent = isAGB ? 'Aboveground Biomass (AGB)' : 'Canopy Height Model (CHM)';
+  document.getElementById('leg-unit').textContent = isAGB ? 'Unit: relative biomass index' : 'Unit: meters above ground';
+}
+
+// ═══════════════════ TREND CHART ═══════════════════
+function buildTrendChart() {
+  const agbMeans = YEARS.map(y => {
+    const v = META[`AGB_${y}`]?.stats?.mean;
+    return (v === null || isNaN(v)) ? null : v;
+  });
+  const chmMeans = YEARS.map(y => {
+    const v = META[`CHM_${y}`]?.stats?.mean;
+    return (v === null || isNaN(v)) ? null : v;
+  });
+
+  const ctx = document.getElementById('trend-chart').getContext('2d');
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: YEARS,
+      datasets: [
+        {
+          label: 'Mean AGB',
+          data: agbMeans,
+          borderColor: '#52b788',
+          backgroundColor: 'rgba(82,183,136,0.12)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#2d6a4f',
+          tension: 0.3,
+          fill: true,
+          yAxisID: 'y1',
+          spanGaps: true
+        },
+        {
+          label: 'Mean CHM (m)',
+          data: chmMeans,
+          borderColor: '#2171b5',
+          backgroundColor: 'rgba(33,113,181,0.08)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#08306b',
+          tension: 0.3,
+          fill: false,
+          yAxisID: 'y2',
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 } }, grid: { color: '#e8f5e9' } },
+        y1: {
+          position: 'left',
+          ticks: { font: { size: 9 }, color: '#52b788' },
+          grid: { color: '#e8f5e9' },
+          title: { display: false }
+        },
+        y2: {
+          position: 'right',
+          ticks: { font: { size: 9 }, color: '#2171b5' },
+          grid: { drawOnChartArea: false },
+          title: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// ═══════════════════ CONTROLS ═══════════════════
+function setTypeFromSelect(type) {
+  currentType = type;
+  loadOverlay();
+  updateStats();
+  updateSiteInfo();
+}
+
+function setSiteFromSelect(site) {
+  // Only Howland data is available now; hook for additional sites.
+  resetView();
+}
+
+function setYearFromSelect(year) {
+  currentYear = year;
+  loadOverlay();
+  updateStats();
+  updateSiteInfo();
+}
+
+// ═══════════════════ SITE INFO ═══════════════════
+function updateSiteInfo() {
+  const key = `${currentType}_${currentYear}`;
+  const item = META[key];
+  if (!item) return;
+  document.getElementById('info-site').innerHTML = `<strong>Site:</strong> ${item.site || '-'}`;
+  document.getElementById('info-location').innerHTML = `<strong>Location:</strong> ${item.location || '-'}`;
+  document.getElementById('info-sensor').innerHTML = `<strong>Sensor:</strong> ${item.sensor || '-'}`;
+  document.getElementById('info-resolution').innerHTML = `<strong>Resolution:</strong> ${item.resolution || '-'}`;
+}
+
+function setBase(name, btn) {
+  Object.values(baseLayers).forEach(l => map.removeLayer(l));
+  baseLayers[name].addTo(map);
+  if (currentOverlay) { currentOverlay.remove(); currentOverlay.addTo(map); }
+  currentBase = name;
+  document.querySelectorAll('.map-controls .btn-toggle').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function resetView() {
+  map.setView([45.209, -68.732], 13);
+}
+
+// TIF filename mapping (handles CHM_2025 anomaly: Howland_CMH_2025.tif)
+const TIF_FILES = {
+  "AGB_2012": "../Maps/Howland_AGB_2012.tif",
+  "AGB_2015": "../Maps/Howland_AGB_2015.tif",
+  "AGB_2017": "../Maps/Howland_AGB_2017.tif",
+  "AGB_2021": "../Maps/Howland_AGB_2021.tif",
+  "AGB_2023": "../Maps/Howland_AGB_2023.tif",
+  "AGB_2025": "../Maps/Howland_AGB_2025.tif",
+  "CHM_2012": "../Maps/Howland_CHM_2012.tif",
+  "CHM_2015": "../Maps/Howland_CHM_2015.tif",
+  "CHM_2017": "../Maps/Howland_CHM_2017.tif",
+  "CHM_2021": "../Maps/Howland_CHM_2021.tif",
+  "CHM_2023": "../Maps/Howland_CHM_2023.tif",
+  "CHM_2025": "../Maps/Howland_CMH_2025.tif"  // original filename anomaly preserved
+};
+
+function downloadCurrentLayer(format) {
+  const key = `${currentType}_${currentYear}`;
+  const item = META[key];
+  if (!item) { alert('No layer available for download.'); return; }
+  const a = document.createElement('a');
+  if (format === 'tif') {
+    const tifPath = TIF_FILES[key];
+    if (!tifPath) { alert('GeoTIFF source file not found for this layer.'); return; }
+    a.href = tifPath;
+    a.download = `DigiSylva_${key}.tif`;
+  } else {
+    a.href = item.image;
+    a.download = `DigiSylva_${key}.png`;
+  }
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ═══════════════════ START ═══════════════════
+document.addEventListener('DOMContentLoaded', initMap);
+</script>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <span>© 2026 DigiSylva. Released on 12/03/2025. Updated on 07/04/2026.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../js/search.js"></script>
+</body>
+</html>

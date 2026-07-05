@@ -11,7 +11,7 @@ const SEARCH_INDEX = [
   },
   {
     title: "Forest Map - AGB and CHM Viewer",
-    url: "map.html",
+    url: "forest-map.html",
     keywords: ["forest map","AGB","CHM","LiDAR","Howland","aboveground biomass","canopy height","overlay","leaflet","layer","year","download","tif"],
     snippet: "Interactive visualization of aboveground biomass (AGB) and canopy height (CHM) with multi-year time series at Howland Research Forest."
   },
@@ -29,13 +29,13 @@ const SEARCH_INDEX = [
   },
   {
     title: "Forest Explorer - USDA National Agriculture Imagery Program (NAIP)",
-    url: "naip.html",
+    url: "forest-explorer.html",
     keywords: ["Forest Explorer","NAIP","aerial imagery","USDA","orthoimagery","satellite","NDVI","CIR","color infrared","GeoTIFF","download","coverage","planetary computer"],
     snippet: "View and download USDA NAIP aerial imagery - natural color, color-infrared, and NDVI - with area selection and GeoTIFF export."
   },
   {
-    title: "Prediction - Biomass and Canopy Forecasting",
-    url: "prediction.html",
+    title: "Forest Prediction - Biomass and Canopy Forecasting",
+    url: "forest-prediction.html",
     keywords: ["prediction","forecast","scenario","biomass projection","climate","management","regression","model","future","warming"],
     snippet: "Machine learning models for projecting future forest biomass and canopy dynamics under baseline, warming, and active management scenarios."
   },
@@ -107,7 +107,7 @@ const SEARCH_INDEX = [
   },
   {
     title: "Howland Research Forest",
-    url: "map.html",
+    url: "forest-map.html",
     keywords: ["Howland","AmeriFlux","US-Ho1","Penobscot","carbon flux","LiDAR monitoring","Maine","spruce","fir","hardwood"],
     snippet: "Howland Research Forest, Howland ME - AmeriFlux eddy covariance site US-Ho1. Primary LiDAR monitoring site for DigiSylva (2012-2025)."
   },
@@ -266,16 +266,16 @@ function runSearch(query) {
       a.innerHTML = `
         <div class="search-result-title">${highlight(item.title, q)}</div>
         <div class="search-result-snippet">${highlight(item.snippet, q)}</div>
-        <div class="search-result-url">digisylva · ${item.url}</div>
+        <div class="search-result-url">DigiSylva · ${resolveUrl(item.url)}</div>
       `;
       resultsEl.insertBefore(a, emptyEl);
     });
   }
 }
 
-/* ─── Keyboard Shortcut ─── */
+/* Keyboard shortcut: Ctrl/Cmd + K */
 document.addEventListener('keydown', function(e) {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
     e.preventDefault();
     openSearch();
   }

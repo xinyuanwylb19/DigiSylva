@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Forest Prediction - DigiSylva</title>
+  <meta name="description" content="Project forest biomass and canopy dynamics under climate and management scenarios with DigiSylva." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://digisylva.com/pages/forest-prediction.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="DigiSylva" />
+  <meta property="og:title" content="Forest Prediction - DigiSylva" />
+  <meta property="og:description" content="Project forest biomass and canopy dynamics under climate and management scenarios with DigiSylva." />
+  <meta property="og:url" content="https://digisylva.com/pages/forest-prediction.html" />
+  <meta property="og:image" content="https://digisylva.com/assets/DigiSylva_logo_full.png" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <link rel="icon" href="../assets/favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
@@ -57,6 +67,10 @@
     .scenario-card p { font-size: 0.78rem; color: var(--text-mid); }
     /* Fill the full page width (no centered max-width strip) */
     .section { max-width: none; }
+    .fp-tabs { display: flex; gap: 0.4rem; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
+    .fp-tab { background: none; border: none; padding: 0.7rem 1.3rem; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--text-light); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .15s, border-color .15s; }
+    .fp-tab:hover { color: var(--green-mid); }
+    .fp-tab.active { color: var(--green-dark); border-bottom-color: var(--green-bright); }
     @media (max-width: 900px) { .pred-layout { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -75,7 +89,7 @@
     <li><a href="forest-map.html">Forest Map</a></li>
     <li><a href="forest-prediction.html" class="active">Forest Prediction</a></li>
     <li><a href="forest-health.html">Forest Health</a></li>
-    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="forest-tools.html">Forest Tool</a></li>
     <li><a href="ai-advisor.html">AI Advisor</a></li>
     <li><a href="publications.html">Publications</a></li>
     <li><a href="workshops.html">Workshops</a></li>
@@ -89,12 +103,17 @@
   <div class="page-header">
     <div class="page-header-inner">
       <h1>Forest Prediction</h1>
-      <p>Forecasting forest biomass and canopy change</p>
+      <p>Forecasting forest change</p>
     </div>
   </div>
 
   <div class="section">
 
+    <div class="fp-tabs">
+      <button class="fp-tab active" data-tab="howland">Howland Research Forest</button>
+    </div>
+
+    <div class="fp-panel" id="fp-howland">
     <div class="pred-layout">
 
       <!-- SIDEBAR: Controls -->
@@ -234,6 +253,7 @@
       </div><!-- end main charts -->
 
     </div>
+    </div><!-- end fp-panel -->
 
   </div>
 </div><!-- end page-wrapper -->
@@ -518,6 +538,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+document.querySelectorAll(".fp-tab").forEach(function(b){
+  b.addEventListener("click", function(){
+    document.querySelectorAll(".fp-tab").forEach(function(x){ x.classList.toggle("active", x===b); });
+    var t=b.getAttribute("data-tab");
+    document.querySelectorAll(".fp-panel").forEach(function(pnl){ pnl.style.display = (pnl.id==="fp-"+t) ? "" : "none"; });
+  });
+});
+</script>
 <script src="../js/search.js"></script>
 </body>
 </html>

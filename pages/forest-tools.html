@@ -3,27 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forest Tools - DigiSylva</title>
+  <title>Forest Tool - DigiSylva</title>
+  <meta name="description" content="Forest tools and software from DigiSylva: Wood Products Carbon Tracker, PyFIA, ForestVoxel, and FIALab." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://digisylva.com/pages/forest-tools.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="DigiSylva" />
+  <meta property="og:title" content="Forest Tool - DigiSylva" />
+  <meta property="og:description" content="Forest tools and software from DigiSylva: Wood Products Carbon Tracker, PyFIA, ForestVoxel, and FIALab." />
+  <meta property="og:url" content="https://digisylva.com/pages/forest-tools.html" />
+  <meta property="og:image" content="https://digisylva.com/assets/DigiSylva_logo_full.png" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <link rel="icon" href="../assets/favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
   <link rel="stylesheet" href="../css/style.css" />
   <style>
-    .tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
+    .tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; max-width: 1150px; margin: 0 auto; }
     .tool-card {
       background: white; border: 1px solid var(--border); border-radius: var(--radius-md);
-      padding: 1.75rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.75rem;
+      padding: 1.6rem 1.75rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.8rem;
       transition: all var(--transition);
     }
     .tool-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .tool-card .t-icon {
-      width: 56px; height: 56px; background: var(--green-pale); border-radius: 12px;
-      display: flex; align-items: center; justify-content: center; font-size: 2rem;
-    }
+    .t-head { display: flex; align-items: center; gap: 1rem; }
+    .t-logo { width: 64px; height: 64px; object-fit: contain; border-radius: 12px; background: #f4f8f5; border: 1px solid var(--border); padding: 6px; flex-shrink: 0; }
     .tool-card h3 { color: var(--green-dark); font-family: 'Inter', sans-serif; font-size: 1.15rem; margin: 0; }
-    .tool-card .t-meta { font-size: 0.78rem; color: var(--green-mid); font-weight: 600; }
+    .t-meta { font-size: 0.78rem; color: var(--green-mid); font-weight: 600; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .t-badge { display: inline-block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.15rem 0.55rem; border-radius: 100px; }
+    .t-badge.online { background: var(--green-pale); color: var(--green-mid); }
+    .t-badge.offline { background: #fff3e0; color: #c9721c; }
     .tool-card p { font-size: 0.9rem; color: var(--text-mid); line-height: 1.65; margin: 0; }
+    .t-shot { width: 100%; border-radius: 8px; border: 1px solid var(--border); display: block; }
+    .t-contact { font-size: 0.85rem; color: var(--text-mid); background: var(--green-pale); border-radius: 8px; padding: 0.65rem 0.85rem; line-height: 1.6; }
+    .t-contact a { color: var(--green-mid); font-weight: 600; }
     .tool-links { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.5rem; }
+    .t-shot { cursor: zoom-in; }
+    /* image lightbox */
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 2rem; cursor: zoom-out; }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 95%; max-height: 92%; border-radius: 8px; box-shadow: 0 12px 44px rgba(0,0,0,0.55); }
+    .lightbox .lb-close { position: absolute; top: 16px; right: 26px; color: #fff; font-size: 2rem; line-height: 1; cursor: pointer; }
+    /* contact modal */
+    .contact-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 3000; padding: 1.5rem; }
+    .contact-modal.open { display: flex; }
+    .cm-box { position: relative; background: #fff; border-radius: 14px; padding: 1.6rem 1.8rem; max-width: 430px; width: 100%; box-shadow: 0 14px 44px rgba(0,0,0,0.3); }
+    .cm-box h3 { margin: 0 0 0.6rem; color: var(--green-dark); font-family: 'Inter', sans-serif; }
+    .cm-box p { font-size: 0.9rem; color: var(--text-mid); margin: 0 0 0.6rem; line-height: 1.6; }
+    .cm-email { font-weight: 700; color: var(--green-dark); font-size: 1.05rem; background: var(--green-pale); border-radius: 8px; padding: 0.6rem 0.8rem; text-align: center; margin-bottom: 0.9rem; word-break: break-all; }
+    .cm-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .cm-close { position: absolute; top: 0.8rem; right: 1rem; cursor: pointer; color: var(--text-light); font-size: 1.2rem; line-height: 1; }
+    .cm-hint { font-size: 0.78rem; color: var(--green-mid); min-height: 1em; margin-top: 0.5rem; }
   </style>
 </head>
 <body>
@@ -41,7 +71,7 @@
     <li><a href="forest-map.html">Forest Map</a></li>
     <li><a href="forest-prediction.html">Forest Prediction</a></li>
     <li><a href="forest-health.html">Forest Health</a></li>
-    <li><a href="forest-tools.html" class="active">Forest Tools</a></li>
+    <li><a href="forest-tools.html" class="active">Forest Tool</a></li>
     <li><a href="ai-advisor.html">AI Advisor</a></li>
     <li><a href="publications.html">Publications</a></li>
     <li><a href="workshops.html">Workshops</a></li>
@@ -54,8 +84,8 @@
 <div class="page-wrapper">
   <div class="page-header">
     <div class="page-header-inner">
-      <h1>Forest Tools</h1>
-      <p>Open tools and software</p>
+      <h1>Forest Tool</h1>
+      <p>Tools and software</p>
     </div>
   </div>
 
@@ -64,10 +94,15 @@
 
       <!-- Wood Products Carbon Tracker -->
       <div class="tool-card">
-        <div class="t-icon">🪵</div>
-        <h3>Wood Products Carbon Tracker</h3>
-        <div class="t-meta">Interactive web tool</div>
+        <div class="t-head">
+          <img class="t-logo" src="../assets/WPsCT.png" alt="Wood Products Carbon Tracker logo" />
+          <div>
+            <h3>Wood Products Carbon Tracker</h3>
+            <div class="t-meta">Interactive web tool <span class="t-badge online">Online</span></div>
+          </div>
+        </div>
         <p>Estimate and track carbon stored in harvested wood products over time, supporting stakeholder collaboration and forest-products decision-making.</p>
+        <p style="font-size:0.82rem;color:var(--text-light);line-height:1.6;margin:0;">Wei, X., Zhao, J., Hayes, D. J., Daigneault, A., &amp; Zhu, H. (2023). A life cycle and product type based estimator for quantifying the carbon stored in wood products. <em>Carbon Balance and Management</em>, 18(1), 1.</p>
         <div class="tool-links">
           <a class="btn btn-primary btn-sm" href="https://wpsctracker.org/" target="_blank" rel="noopener">🔗 Open tool</a>
         </div>
@@ -75,13 +110,52 @@
 
       <!-- PyFIA -->
       <div class="tool-card">
-        <div class="t-icon">🐍</div>
-        <h3>PyFIA</h3>
-        <div class="t-meta">Open-source Python package</div>
-        <p>Analyze and visualize the U.S. Forest Inventory and Analysis (FIA) database, lowering the barrier to forest science for researchers and practitioners. Published in <em>Carbon Balance and Management</em> (2025).</p>
+        <div class="t-head">
+          <img class="t-logo" src="../assets/PyFIA.png" alt="PyFIA logo" />
+          <div>
+            <h3>PyFIA</h3>
+            <div class="t-meta">Open-source Python program <span class="t-badge online">Online</span></div>
+          </div>
+        </div>
+        <p>Analyze and visualize the U.S. Forest Inventory and Analysis (FIA) database, lowering the barrier to forest science for researchers and practitioners.</p>
+        <p style="font-size:0.82rem;color:var(--text-light);line-height:1.6;margin:0;">Wei, X., Hayes, D., McHale, G., Zhao, J., Weiskittel, A., &amp; Daigneault, A. (2026). PyFIA: analyzing and visualizing forest attributes using the United States Forest Inventory and Analysis database. <em>Carbon Balance and Management</em>, 21(1), 18.</p>
         <div class="tool-links">
           <a class="btn btn-primary btn-sm" href="https://github.com/xinyuanwylb19/PyFIA" target="_blank" rel="noopener">🔗 GitHub / tool</a>
           <a class="btn btn-dark btn-sm" href="https://link.springer.com/article/10.1186/s13021-025-00364-7" target="_blank" rel="noopener">📄 Read the paper</a>
+        </div>
+      </div>
+
+      <!-- ForestVoxel -->
+      <div class="tool-card">
+        <div class="t-head">
+          <img class="t-logo" src="../assets/ForestVoxel.png" alt="ForestVoxel logo" />
+          <div>
+            <h3>ForestVoxel</h3>
+            <div class="t-meta">Desktop application <span class="t-badge offline">By request</span></div>
+          </div>
+        </div>
+        <p>ForestVoxel maps forest attributes from LiDAR point clouds and provides various built-in default models.</p>
+        <img class="t-shot" src="../assets/ForestVoxel_Window.jpg" alt="ForestVoxel application window" />
+        <div class="t-contact">Not available online. To request access, email <a href="mailto:xinyuan.wei@maine.edu?subject=ForestVoxel%20access%20request">xinyuan.wei@maine.edu</a>.</div>
+        <div class="tool-links">
+          <button class="btn btn-primary btn-sm" data-request="ForestVoxel">✉ Request access</button>
+        </div>
+      </div>
+
+      <!-- FIALab -->
+      <div class="tool-card">
+        <div class="t-head">
+          <img class="t-logo" src="../assets/FIALab.png" alt="FIALab logo" />
+          <div>
+            <h3>FIALab</h3>
+            <div class="t-meta">Desktop application <span class="t-badge offline">By request</span></div>
+          </div>
+        </div>
+        <p>FIALab processes U.S. Forest Inventory and Analysis (FIA) data, including analysis, visualization, and modeling.</p>
+        <img class="t-shot" src="../assets/FIALab_Window.jpg" alt="FIALab application window" />
+        <div class="t-contact">Not available online. To request access, email <a href="mailto:xinyuan.wei@maine.edu?subject=FIALab%20access%20request">xinyuan.wei@maine.edu</a>.</div>
+        <div class="tool-links">
+          <button class="btn btn-primary btn-sm" data-request="FIALab">✉ Request access</button>
         </div>
       </div>
 
@@ -97,6 +171,62 @@
   </div>
 </footer>
 
+<!-- image lightbox -->
+<div class="lightbox" id="lightbox"><span class="lb-close">✕</span><img src="" alt="Preview" /></div>
+<!-- contact modal -->
+<div class="contact-modal" id="contact-modal">
+  <div class="cm-box">
+    <span class="cm-close" data-cmclose>✕</span>
+    <h3>Request access</h3>
+    <p>To request <b id="cm-tool">this tool</b>, please email:</p>
+    <div class="cm-email" id="cm-email">xinyuan.wei@maine.edu</div>
+    <div class="cm-actions">
+      <a class="btn btn-primary btn-sm" id="cm-mailto" href="mailto:xinyuan.wei@maine.edu">✉ Open email app</a>
+      <button class="btn btn-dark btn-sm" id="cm-copy" type="button">📋 Copy email</button>
+    </div>
+    <div class="cm-hint" id="cm-hint"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var EMAIL = 'xinyuan.wei@maine.edu';
+
+  // --- screenshot lightbox ---
+  var lb = document.getElementById('lightbox');
+  var lbImg = lb.querySelector('img');
+  document.querySelectorAll('.t-shot').forEach(function(img){
+    img.addEventListener('click', function(){ lbImg.src = this.src; lbImg.alt = this.alt || 'Preview'; lb.classList.add('open'); });
+  });
+  lb.addEventListener('click', function(){ lb.classList.remove('open'); lbImg.src = ''; });
+
+  // --- contact modal ---
+  var cm = document.getElementById('contact-modal');
+  var cmTool = document.getElementById('cm-tool');
+  var cmMailto = document.getElementById('cm-mailto');
+  var cmHint = document.getElementById('cm-hint');
+  function openModal(tool){
+    cmTool.textContent = tool;
+    cmMailto.href = 'mailto:' + EMAIL + '?subject=' + encodeURIComponent(tool + ' access request');
+    cmHint.textContent = '';
+    cm.classList.add('open');
+  }
+  function closeModal(){ cm.classList.remove('open'); }
+  document.querySelectorAll('[data-request]').forEach(function(b){
+    b.addEventListener('click', function(){ openModal(this.getAttribute('data-request')); });
+  });
+  cm.querySelector('[data-cmclose]').addEventListener('click', closeModal);
+  cm.addEventListener('click', function(e){ if(e.target === cm) closeModal(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeModal(); lb.classList.remove('open'); } });
+
+  document.getElementById('cm-copy').addEventListener('click', function(){
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(EMAIL).then(function(){ cmHint.textContent = 'Email copied to clipboard.'; },
+        function(){ cmHint.textContent = 'Copy failed — please copy manually.'; });
+    } else { cmHint.textContent = 'Please copy the address manually.'; }
+  });
+})();
+</script>
 <script src="../js/search.js"></script>
 </body>
 </html>

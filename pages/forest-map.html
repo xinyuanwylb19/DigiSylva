@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Forest Map - DigiSylva</title>
+  <meta name="description" content="Interactive DigiSylva maps of aboveground biomass and canopy height with multi-year time series." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://digisylva.com/pages/forest-map.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="DigiSylva" />
+  <meta property="og:title" content="Forest Map - DigiSylva" />
+  <meta property="og:description" content="Interactive DigiSylva maps of aboveground biomass and canopy height with multi-year time series." />
+  <meta property="og:url" content="https://digisylva.com/pages/forest-map.html" />
+  <meta property="og:image" content="https://digisylva.com/assets/DigiSylva_logo_full.png" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <link rel="icon" href="../assets/favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
@@ -114,7 +124,7 @@
     <li><a href="forest-map.html" class="active">Forest Map</a></li>
     <li><a href="forest-prediction.html">Forest Prediction</a></li>
     <li><a href="forest-health.html">Forest Health</a></li>
-    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="forest-tools.html">Forest Tool</a></li>
     <li><a href="ai-advisor.html">AI Advisor</a></li>
     <li><a href="publications.html">Publications</a></li>
     <li><a href="workshops.html">Workshops</a></li>
@@ -255,11 +265,20 @@ let currentOpacity = 0.85;
 let map, baseLayers = {}, currentBase = 'streets';
 let trendChart = null;
 
+// US default view + data-site registry (add more sites here in the future)
+const US_VIEW = { center: [39.5, -98.35], zoom: 4 };
+const SITES = {
+  HL: {
+    name: 'Howland Research Forest', lat: 45.209, lon: -68.740, zoom: 13,
+    popup: '<div class="info-popup"><strong>Howland Research Forest</strong><br>Howland, Maine<br>AmeriFlux Site (US-Ho1)<br>LiDAR monitoring: 2012-2025</div>'
+  }
+};
+
 // ═══════════════════ INIT MAP ═══════════════════
 function initMap() {
   map = L.map('map-container', {
-    center: [45.209, -68.732],
-    zoom: 13,
+    center: US_VIEW.center,
+    zoom: US_VIEW.zoom,
     zoomControl: true
   });
 
@@ -279,11 +298,8 @@ function initMap() {
     maxZoom: 17
   });
 
-  // Add Howland site marker
-  const marker = L.circleMarker([45.209, -68.740], {
-    radius: 8, color: '#2d6a4f', fillColor: '#52b788', fillOpacity: 0.9, weight: 2
-  }).addTo(map);
-  marker.bindPopup(`<div class="info-popup"><strong>Howland Research Forest</strong><br>Howland, Maine<br>AmeriFlux Site (US-Ho1)<br>LiDAR monitoring: 2012-2025</div>`);
+  // Add a dot for each available data site (extend SITES to add more later)
+  addSiteMarkers();
 
   // Build year dropdown
   const yearSelect = document.getElementById('year-select');
@@ -299,6 +315,24 @@ function initMap() {
   updateStats();
   updateSiteInfo();
   buildTrendChart();
+}
+
+// ═══════════════════ SITE DOTS ═══════════════════
+function addSiteMarkers() {
+  Object.keys(SITES).forEach(function (id) {
+    const s = SITES[id];
+    const m = L.circleMarker([s.lat, s.lon], {
+      radius: 8, color: '#2d6a4f', fillColor: '#52b788', fillOpacity: 0.9, weight: 2
+    }).addTo(map);
+    m.bindTooltip(s.name, { direction: 'top' });
+    m.bindPopup(s.popup);
+    m.on('click', function () { flyToSite(id); });
+  });
+}
+function flyToSite(id) {
+  const s = SITES[id]; if (!s) return;
+  map.flyTo([s.lat, s.lon], s.zoom, { duration: 1.2 });
+  const sel = document.getElementById('site-select'); if (sel) sel.value = id;
 }
 
 // ═══════════════════ OVERLAY ═══════════════════
@@ -429,8 +463,7 @@ function setTypeFromSelect(type) {
 }
 
 function setSiteFromSelect(site) {
-  // Only Howland data is available now; hook for additional sites.
-  resetView();
+  flyToSite(site);
 }
 
 function setYearFromSelect(year) {
@@ -461,7 +494,7 @@ function setBase(name, btn) {
 }
 
 function resetView() {
-  map.setView([45.209, -68.732], 13);
+  map.setView(US_VIEW.center, US_VIEW.zoom);
 }
 
 // TIF filename mapping (handles CHM_2025 anomaly: Howland_CMH_2025.tif)

@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>News - DigiSylva</title>
+  <meta name="description" content="Latest news, data releases, and updates from the DigiSylva platform." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://digisylva.com/pages/news.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="DigiSylva" />
+  <meta property="og:title" content="News - DigiSylva" />
+  <meta property="og:description" content="Latest news, data releases, and updates from the DigiSylva platform." />
+  <meta property="og:url" content="https://digisylva.com/pages/news.html" />
+  <meta property="og:image" content="https://digisylva.com/assets/DigiSylva_logo_full.png" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <link rel="icon" href="../assets/favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
@@ -86,7 +96,7 @@
     <li><a href="forest-map.html">Forest Map</a></li>
     <li><a href="forest-prediction.html">Forest Prediction</a></li>
     <li><a href="forest-health.html">Forest Health</a></li>
-    <li><a href="forest-tools.html">Forest Tools</a></li>
+    <li><a href="forest-tools.html">Forest Tool</a></li>
     <li><a href="ai-advisor.html">AI Advisor</a></li>
     <li><a href="publications.html">Publications</a></li>
     <li><a href="workshops.html">Workshops</a></li>
@@ -152,8 +162,9 @@
         <div class="sidebar-widget">
           <h4>📬 Newsletter</h4>
           <p style="font-size:0.82rem;color:var(--text-mid);margin-bottom:0.75rem;line-height:1.6;">Stay updated with the latest DigiSylva news, data releases, and publications. Sign up for our occasional newsletter.</p>
-          <input type="email" placeholder="your@email.edu" class="form-input" style="margin-bottom:0.5rem;" />
-          <button class="btn btn-primary" style="width:100%;">Subscribe</button>
+          <input type="email" id="nl-email" placeholder="your@email.edu" class="form-input" style="margin-bottom:0.5rem;" onkeydown="if(event.key==='Enter'){subscribeNewsletter();}" />
+          <button class="btn btn-primary" style="width:100%;" onclick="subscribeNewsletter()">Subscribe</button>
+          <p id="nl-msg" style="font-size:0.74rem;margin:0.5rem 0 0;text-align:center;min-height:1em;"></p>
           <p style="font-size:0.72rem;color:var(--text-light);margin-top:0.4rem;text-align:center;">No spam · Unsubscribe anytime</p>
         </div>
 
@@ -180,6 +191,21 @@
   var el=document.getElementById('visitor-count');
   if(el) el.textContent = Number(c).toLocaleString();
 })();
+
+function subscribeNewsletter(){
+  var el=document.getElementById('nl-email');
+  var msg=document.getElementById('nl-msg');
+  var email=(el.value||'').trim();
+  var ok=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if(!ok){ msg.style.color='#d84315'; msg.textContent='Please enter a valid email address.'; el.focus(); return; }
+  var to='xinyuan.wei@maine.edu';
+  var subject=encodeURIComponent('DigiSylva newsletter signup');
+  var body=encodeURIComponent('Please add this address to the DigiSylva newsletter list:\n\n'+email+'\n\nThank you.');
+  window.location.href='mailto:'+to+'?subject='+subject+'&body='+body;
+  msg.style.color='var(--green-mid)';
+  msg.textContent='Thanks! Your email app will open to confirm.';
+  el.value='';
+}
 </script>
 <script src="../js/search.js"></script>
 </body>

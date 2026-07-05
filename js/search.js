@@ -22,7 +22,7 @@ const SEARCH_INDEX = [
     snippet: "188 field inventory plots across Maine with biomass and volume time series, LiDAR structure metrics, and per-plot tree maps."
   },
   {
-    title: "Forest Tools - External Tools and Software",
+    title: "Forest Tool - Tools and Software",
     url: "forest-tools.html",
     keywords: ["forest tools","wood products carbon tracker","WPSC","PyFIA","FIA","software","calculator","carbon","github"],
     snippet: "DigiSylva team tools: the Wood Products Carbon Tracker and the PyFIA Python package for U.S. Forest Inventory and Analysis data."
